@@ -1,37 +1,108 @@
-#include <ESP32Servo.h>
-Servo myServo;
-#define Servo_Pin 18 // Changed to 13 to avoid ESP32-CAM SD card conflicts
-
-int angle = 180;
-int direction = -1; // Global variable to remember the way we are moving
-
-void setup() {
-  myServo.attach(Servo_Pin);
-  myServo.write(angle);
-  delay(500);
-}
-
-void loop() {
-  myServo.write(angle);
-
-  // Update the direction based on the current angle
-  direction = getDirection(angle, direction);
-
-  switch (direction) {
-    case 1:
-      angle++;
-      break;
-    case -1:
-      angle--;
-      break;
-  }
+/*
+  Road-E Project - Electronics
   
-  delay(30); 
+  Code To Check If Connectuon Between ESP32 And MySQL Is Possible With Python.
+  The Code Contain The Next Sensors: AHT10, HSCR04, LDR.
+
+  author: Ariel Gal
+  date: 06-02-2026
+
+  As Date 06-02:
+  1. add start of code
+  
+*/
+
+//libraries
+#include <Wire.h>
+#include <Adafruit_AHTX0.h>
+#include <ESP32Servo.h>
+
+//total defines
+#define i2c_Address 0x3c
+
+//hcsr04
+#define Echo_Pin 33
+#define Trig_Pin 32
+
+//aht10
+Adafruit_AHTX0 aht;
+
+//LDR
+#define LDR 34
+
+void setup(){
+  Serial.begin(9600);
+
+  //hcsr
+  pinMode(Echo_Pin, INPUT);
+  pinMode(Trig_Pin, OUTPUT);
+
+  //aht10
+  if (!aht.begin()) {
+    Serial.println("Could Not Find AHT10 Sensor!");
+    while (1) delay(10);
+  }
+
+  //LDR
+  pinMode(LDR, INPUT);
+
+  //Servo
+  myServo.attach(Servo_Pin);
+  myServo.write(0);
+  delay(500);
+  myServo.write(180);
+  delay(500);
+  myServo.write(90);
 }
 
-// Function to decide if we should flip direction
-int getDirection(int currentAngle, int currentDir) {
-  if (currentAngle >= 180) return -1; // Hit the top, go down
-  if (currentAngle <= 0)   return 1;  // Hit the bottom, go up
-  return currentDir;                  // Otherwise, keep going the same way
+
+void loop(){
+  sensors_event_t humidity, temp;
+  aht.getEvent(&humidity, &temp);
+
+  delay(100);
+
+  int light = analogRead(LDR);
+
+  dealy(100);
+
+  //calc distance hcsr04
+  long duration;
+  float distance;
+  digitalWrite(TRIG_PIN, LOW);
+  delayMicroseconds(2);
+  digitalWrite(TRIG_PIN, HIGH);
+  delayMicroseconds(10);
+  digitalWrite(TRIG_PIN, LOW);
+  duration = pulseIn(ECHO_PIN, HIGH);
+  distance = duration * 0.034 / 2;
+  Serial.print("distance -> ");
+  Serial.println(distance);
+
+  
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
