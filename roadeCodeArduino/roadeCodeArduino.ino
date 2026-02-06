@@ -2,11 +2,12 @@
   Road-E Project - Electronics
   
   author: Ariel Gal
-  date: 05-02-2026
+  date: 06-02-2026
 
-  Changes In Code At Date 05-02:
-  1. Add code for L293D to drive forword
-  2. Start on code for all project (in arduino anly, without WS & SQL/Python)
+  Changes In Code At Date 06-02:
+  1. add int for light reading from LDR
+  2. declare about LDR (Opps);
+
 */
 
 //Libraries
@@ -108,6 +109,9 @@ void setup() {
   display.display();
   display.setTextColor(SH110X_WHITE, SH110X_BLACK);  //(0,1)
 
+  //LDR
+  pinMode(LDR, INPUT);
+
   //aht10
   if (!aht.begin()) {
     Serial.println("Could Not Find AHT10 Sensor!");
@@ -121,7 +125,8 @@ void loop() {
   aht.getEvent(&humidity, &temp);
 
   //Check for light (from LDR) to turn on lights
-  // if (analogRead(LDR) <= 2000) {
+  // int light = analogRead(LDR);
+  // if (light <= 2000) {
   //   digitalWrite(Red, HIGH);
   //   digitalWrite(Green, HIGH);
   //   digitalWrite(Blue, HIGH);
@@ -153,6 +158,10 @@ void loop() {
   digitalWrite(Motor2_Pin2, LOW);
   ledcWrite(Motor_Enable, motorSpeed);
   delay(500);
+
+  
+
+
 
   myServo.write(angle);
 }
