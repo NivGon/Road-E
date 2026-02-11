@@ -1,24 +1,176 @@
-body { margin: 0; font-family: 'Segoe UI', sans-serif; background-color: #0f0f0f; color: #e0e0e0; }
-nav { display: flex; justify-content: space-between; align-items: center; padding: 15px 5%; background-color: #1a1a1a; border-bottom: 1px solid #333; position: sticky; top: 0; z-index: 1000; }
-nav h1 { font-size: 22px; color: #00d4ff; margin: 0; }
-nav ul { list-style: none; display: flex; gap: 25px; margin: 0; }
-nav ul li a { text-decoration: none; color: #b0b0b0; font-size: 14px; transition: 0.3s; }
-nav ul li a:hover { color: #fff; }
+body {
+  margin: 0;
+  font-family: "Segoe UI", sans-serif;
+  background-color: #0f0f0f;
+  color: #e0e0e0;
+}
 
-.container { padding: 40px 5%; min-height: 90vh; }
-.dashboard-grid { display: grid; grid-template-columns: 2fr 1fr; gap: 20px; }
-        
-.card { background: #1a1a1a; padding: 20px; border-radius: 8px; border: 1px solid #333; }
-.value { font-size: 28px; font-weight: bold; margin-top: 5px; color: #00d4ff; }
-.no-data { color: #555; font-style: italic; font-size: 14px; }
+nav {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 15px 5%;
+  background-color: #1a1a1a;
+  border-bottom: 1px solid #333;
+  position: sticky;
+  top: 0;
+  z-index: 1000;
+}
 
-.db-table { width: 100%; border-collapse: collapse; background: #1a1a1a; margin-top: 20px; }
-.db-table th, .db-table td { padding: 15px; text-align: left; border-bottom: 1px solid #333; }
-.db-table th { background: #252525; color: #00d4ff; }
+nav h1 {
+  font-size: 22px;
+  color: #00d4ff;
+  margin: 0;
+}
 
-.video-feed { width: 100%; max-width: 640px; aspect-ratio: 4/3; background: #000; border: 2px solid #333; margin: 0 auto 20px; display: flex; align-items: center; justify-content: center; overflow: hidden; }
-.joystick { display: grid; grid-template-columns: repeat(3, 80px); gap: 10px; justify-content: center; }
-.btn { height: 80px; background: #252525; border: 1px solid #444; color: white; cursor: pointer; border-radius: 10px; font-size: 20px; }
-.btn:active { background: #00d4ff; color: #000; }
-.btn-stop { color: #ff4444; border-color: #444; }
-.hidden { visibility: hidden; }
+nav ul {
+  list-style: none;
+  display: flex;
+  gap: 25px;
+  margin: 0;
+}
+
+nav ul li a {
+  text-decoration: none;
+  color: #b0b0b0;
+  font-size: 14px;
+  transition: 0.3s;
+}
+
+nav ul li a:hover {
+  color: #fff;
+}
+
+.container {
+  padding: 40px 5%;
+  min-height: 90vh;
+}
+
+.dashboard-grid {
+  display: grid;
+  grid-template-columns: 2fr 1fr;
+  gap: 20px;
+}
+
+.card {
+  background: #1a1a1a;
+  padding: 20px;
+  border-radius: 8px;
+  border: 1px solid #333;
+}
+
+/* New helper class for spacing */
+.mb-15 {
+  margin-bottom: 15px;
+}
+
+/* Map specific styles */
+.map-card {
+  height: 400px;
+  position: relative;
+}
+
+#map {
+  width: 100%;
+  height: 100%;
+}
+
+.map-overlay {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  pointer-events: none;
+  z-index: 1000; /* Ensure overlay is above map if needed, though pointer-events:none helps */
+}
+
+.value {
+  font-size: 28px;
+  font-weight: bold;
+  margin-top: 5px;
+  color: #00d4ff;
+}
+
+.no-data {
+  color: #555;
+  font-style: italic;
+  font-size: 14px;
+}
+
+.db-table {
+  width: 100%;
+  border-collapse: collapse;
+  background: #1a1a1a;
+  margin-top: 20px;
+}
+
+.db-table th,
+.db-table td {
+  padding: 15px;
+  text-align: left;
+  border-bottom: 1px solid #333;
+}
+
+.db-table th {
+  background: #252525;
+  color: #00d4ff;
+}
+
+.text-center {
+  text-align: center;
+}
+
+.table-placeholder {
+  text-align: center;
+  padding: 40px;
+}
+
+.video-feed {
+  width: 100%;
+  max-width: 640px;
+  aspect-ratio: 4/3;
+  background: #000;
+  border: 2px solid #333;
+  margin: 0 auto 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+}
+
+.stream-img {
+  width: 100%;
+  display: none;
+}
+
+.joystick {
+  display: grid;
+  grid-template-columns: repeat(3, 80px);
+  gap: 10px;
+  justify-content: center;
+}
+
+.btn {
+  height: 80px;
+  background: #252525;
+  border: 1px solid #444;
+  color: white;
+  cursor: pointer;
+  border-radius: 10px;
+  font-size: 20px;
+}
+
+.btn:active {
+  background: #00d4ff;
+  color: #000;
+}
+
+.btn-stop {
+  color: #ff4444;
+  border-color: #444;
+}
+
+.hidden {
+  visibility: hidden;
+}

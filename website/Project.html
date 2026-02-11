@@ -3,6 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin=""/>
     <link rel="stylesheet" href="style.css">
     <script src="script.js" defer></script>
 
@@ -22,15 +23,18 @@
     <div id="about" class="container">
         <h2>Live Monitoring</h2>
         <div class="dashboard-grid">
-            <div id="map-area" class="card" style="height: 400px; display: flex; align-items: center; justify-content: center; text-align: center;">
-                <p class="no-data">Waiting for GPS signal from Road-E...</p>
+            <div id="map-area" class="card map-card">
+                <div id="map"></div>
+                <div id="map-overlay" class="map-overlay">
+                    <p id="map-message" class="no-data">Waiting for GPS signal from Road-E...</p>
+                </div>
             </div>
             <div class="sensor-data">
-                <div class="card" style="margin-bottom: 15px;">
+                <div class="card mb-15">
                     <h3>Temperature</h3>
                     <div id="temp-val" class="value">--</div>
                 </div>
-                <div class="card" style="margin-bottom: 15px;">
+                <div class="card mb-15">
                     <h3>Humidity</h3>
                     <div id="hum-val" class="value">--</div>
                 </div>
@@ -56,19 +60,18 @@
             </thead>
             <tbody id="db-body">
                 <tr>
-                    <td colspan="4" class="no-data" style="text-align: center; padding: 40px;">No data recorded in SQL database.</td>
+                    <td colspan="4" class="no-data table-placeholder">No data recorded in SQL database.</td>
                 </tr>
             </tbody>
         </table>
     </div>
 
-    <div id="control" class="container" style="text-align: center;">
+    <div id="control" class="container text-center">
         <h2>Remote Control</h2>
         <div class="video-feed">
-            <img id="stream" src="" alt="Stream Offline" style="width: 100%; display: none;">
+            <img id="stream" src="" alt="Stream Offline" class="stream-img">
             <p id="stream-placeholder" class="no-data">Camera feed not connected</p>
         </div>
-        
         <div class="joystick">
             <button class="hidden"></button>
             <button class="btn" onmousedown="sendDrive('F')" onmouseup="sendDrive('S')">▲</button>
@@ -83,6 +86,6 @@
             <button class="hidden"></button>
         </div>
     </div>
-
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
 </body>
 </html>
