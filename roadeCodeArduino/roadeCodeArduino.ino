@@ -2,34 +2,50 @@
   Road-E Project - Electronics
   
   author: Ariel Gal
-  date: 04-02-2026
+  date: 11-02-2026
 
-  Changes In Code At Date 04-02:
-  1. add libraries
-  2. add function
+  Changes In Code At Date 11-02:
+  1. add WIFI (as access point)
+
+
 */
 
 //Libraries
-#include <Wire.h> 
+#include <Wire.h>
 #include <Adafruit_AHTX0.h>
 #include <ESP32Servo.h>
 #include <Adafruit_GFX.h>
 #include <Adafruit_SH110X.h>
 #include <Adafruit_NeoPixel.h>
+#include <Wifi.h>
 
 //total defines
-#define i2c_Address 0x3c
+#define i2c_Address 0x3c  //i2c for screen and AHT10
+#define Motor_Enable 14   //Motor Enable Pin
+
+//Motor 1 Pins - Left Side
+#define Motor1_Pin1 12
+#define Motor1_Pin2 13
+
+//Motor 2 Pins - Left Side
+#define Motor2_Pin1 25
+#define Motor2_Pin2 4
+
+//PWM Settings
+#define Frequancy 30000
+const int resolution = 8;    //Range between 0-255
+const int motorSpeed = 130;  //High speed to ensure movement
 
 //defines for OLED screen
-#define Screen_Width 128 //OLED Display In WIdth (in pixels)
-#define Screen_Height 64 //OLED Display In Height (in pixles)
+#define Screen_Width 128  //OLED Display In WIdth (in pixels)
+#define Screen_Height 64  //OLED Display In Height (in pixles)
 #define OLED_Reset -1
 Adafruit_SH1106G display = Adafruit_SH1106G(Screen_Width, Screen_Height, &Wire, OLED_Reset);
 
 //defines for NeoLED
 #define Pin 14
 #define NumPixels 8
-Adafruit_NeoPixel pixels = Adafruit_NeoPixels(NumPixels, PIn, NEO_RGB, NEO_KHZ800);
+Adafruit_NeoPixel pixels = Adafruit_NeoPixel(NumPixels, Pin, NEO_GRB + NEO_KHZ800);
 
 //hcsr04
 #define Echo_Pin 33
@@ -45,8 +61,23 @@ Servo myServo;
 //LDR
 #define LDR 34
 
+//RGB
+#define Red 26
+#define Green 27
+#define Blue 2
+
+//WIFI
+const char* ssid = "Road-E";
+const char* password = "roade1234";
+WifiServer server(80);
+
+
+//counters and checkers
+int angle = 180;  //check for angle of servo
+int direction = -1;
+
 void setup() {
-  Serial.begin(9600)
+  Serial.begin(9600);
 
   //hcsr
   pinMode(Echo_Pin, INPUT);
@@ -60,29 +91,100 @@ void setup() {
   delay(500);
   myServo.write(90);
 
+  //Neo Led
+  pixels.begin();
+  pixels.clear();
+
+  //RGB
+  pinMode(Red, OUTPUT);
+  pinMode(Green, OUTPUT);
+  pinMode(Blue, OUTPUT);
+
+  // Connect Motors
+  pinMode(Motor1_Pin1, OUTPUT);
+  pinMode(Motor1_Pin2, OUTPUT);
+  pinMode(Motor2_Pin1, OUTPUT);
+  pinMode(Motor2_Pin2, OUTPUT);
+
+  // Attach PWM
+  ledcAttach(Motor_Enable, Frequancy, resolution);
+  ledcAttach(Motor_Enable, Frequancy, resolution);
+
+  //OLED
+  display.begin(i2c_Address, true);
+  display.clearDisplay();
+  display.display();
+  display.setTextColor(SH110X_WHITE, SH110X_BLACK);  //(0,1)
+
+  //LDR
+  pinMode(LDR, INPUT);
+
   //aht10
-  if(!aht.begin()){
-    Serial.Write("Could Not Find AHT10 Sensor!");
-    while(1) delay(10);
+  if (!aht.begin()) {
+    Serial.println("Could Not Find AHT10 Sensor!");
+    while (1) delay(10);
   }
 }
 
 void loop() {
-  //aht10
+  //Get Temperature & Humidity
   sensors_event_t humidity, temp;
-  aht.getEvent(&humidity, temp);
+  aht.getEvent(&humidity, &temp);
 
-  //calc distance hcsr04
-  long duration; float distance;
-  digitalWrite(Trig_Pin, LOW);
-  delayMicroseconds(2);
-  digitalWrite(Trig_Pin, HIGH);
-  delayMicroseconds(10);
-  digitalWrite(Trig_Pin, LOW);
-  duration = pulseIn(Echo_Pin, HIGH);
-  distance = duration * 0.0343 / 2;
+  //Check for light (from LDR) to turn on lights
+  // int light = analogRead(LDR);
+  // if (light <= 2000) {
+  //   digitalWrite(Red, HIGH);
+  //   digitalWrite(Green, HIGH);
+  //   digitalWrite(Blue, HIGH);
+  // } else {
+  //   digitalWrite(Red, LOW);
+  //   digitalWrite(Green, LOW);
+  //   digitalWrite(Blue, LOW);
+  // }
 
-  //LDR
-  int light = analogRead(LDR);
+  //Start rotating the servo
+  myServo.write(angle);
+  direction = getDirection(angle, direction);
+
+  //Check to where rotate the servo
+  switch (direction) {
+    case 1:
+      angle++;
+      break;
+    case -1:
+      angle--;
+      break;
+  }
+
+  //Set direction of car forword
+  Serial.println("Moving Forward");
+  digitalWrite(Motor1_Pin1, LOW);
+  digitalWrite(Motor1_Pin2, HIGH);
+  digitalWrite(Motor2_Pin1, HIGH);
+  digitalWrite(Motor2_Pin2, LOW);
+  ledcWrite(Motor_Enable, motorSpeed);
+  delay(500);
+
+  
+
+
+
+  myServo.write(angle);
 }
 
+void DisplayMessage(String row1, String row2) {  //function to print messages on OLED screen
+  display.clearDisplay();
+  display.setTextSize(2);
+  display.setCursor(50, 10);
+  display.print(row1);
+  display.setCursor(35, 35);
+  display.print(row2);
+  display.display();
+}
+
+int getDirection(int currentAngle, int currentDir) {  //function to check direction of servo and reset direcrion
+  if (currentAngle >= 180) return -1;
+  if (currentAngle <= 0) return 1;
+  return currentDir;
+}
