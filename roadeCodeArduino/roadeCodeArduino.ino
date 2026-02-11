@@ -5,7 +5,7 @@
   date: 11-02-2026
 
   Changes In Code At Date 11-02:
-  1. add WIFI (as access point)
+  1. 
 
 
 */
@@ -17,7 +17,7 @@
 #include <Adafruit_GFX.h>
 #include <Adafruit_SH110X.h>
 #include <Adafruit_NeoPixel.h>
-#include <Wifi.h>
+#include <WiFi.h>
 
 //total defines
 #define i2c_Address 0x3c  //i2c for screen and AHT10
@@ -69,7 +69,7 @@ Servo myServo;
 //WIFI
 const char* ssid = "Road-E";
 const char* password = "roade1234";
-WifiServer server(80);
+WiFiServer server(80);
 
 
 //counters and checkers
