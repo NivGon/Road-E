@@ -2,11 +2,11 @@
   Road-E Project - Electronics
   
   author: Ariel Gal
-  date: 06-02-2026
+  date: 11-02-2026
 
-  Changes In Code At Date 06-02:
-  1. add int for light reading from LDR
-  2. declare about LDR (Opps);
+  Changes In Code At Date 11-02:
+  1. add WIFI (as access point)
+
 
 */
 
@@ -17,6 +17,7 @@
 #include <Adafruit_GFX.h>
 #include <Adafruit_SH110X.h>
 #include <Adafruit_NeoPixel.h>
+#include <Wifi.h>
 
 //total defines
 #define i2c_Address 0x3c  //i2c for screen and AHT10
@@ -64,6 +65,12 @@ Servo myServo;
 #define Red 26
 #define Green 27
 #define Blue 2
+
+//WIFI
+const char* ssid = "Road-E";
+const char* password = "roade1234";
+WifiServer server(80);
+
 
 //counters and checkers
 int angle = 180;  //check for angle of servo
