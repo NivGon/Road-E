@@ -5,10 +5,12 @@
   The Code Contain The Next Sensors: AHT10, HSCR04, LDR.
 
   author: Ariel Gal
-  date: 06-02-2026
+  date: 11-02-2026
 
-  As Date 06-02:
-  1. add start of code
+  As Date 11-02:
+  1. add library ArduinoJson - to handle data format in "clean" way 
+  2. add settings for WIFI connection
+  3. add declare for server URL - IP of the computer
   
 */
 
@@ -16,6 +18,7 @@
 #include <Wire.h>
 #include <Adafruit_AHTX0.h>
 #include <ESP32Servo.h>
+#include <ArduinoJson.h>
 
 //total defines
 #define i2c_Address 0x3c
@@ -29,6 +32,14 @@ Adafruit_AHTX0 aht;
 
 //LDR
 #define LDR 34
+
+//Network Settings
+const char* ssid = "Modin-Students"; //WIFI Name 
+const char* password = ""; //WIFI Password
+
+//Server URL
+const char* serverName = "http://COMPUTER_IP:5000/data"; //need to update any time before running + need to keep :5000/data at the end.
+
 
 void setup(){
   Serial.begin(9600);
@@ -46,13 +57,16 @@ void setup(){
   //LDR
   pinMode(LDR, INPUT);
 
-  //Servo
-  myServo.attach(Servo_Pin);
-  myServo.write(0);
-  delay(500);
-  myServo.write(180);
-  delay(500);
-  myServo.write(90);
+  //WIFI Check Connection
+  WiFi.begin(ssid, password);
+  Serial.println("Connecting to WIFI");
+  while(WiFi.status() != WL_CONNECTED){
+    dealy(500);
+    Serial.print(".");
+  }
+  Serial.println("");
+  Serial.print("Connected to WIFI network with IP Address: ");
+  Serial.println(Wifi.LocalIP());
 }
 
 
@@ -78,6 +92,17 @@ void loop(){
   distance = duration * 0.034 / 2;
   Serial.print("distance -> ");
   Serial.println(distance);
+
+  //Check WIFI Connection Status
+  if(WiFi.status() == WL_CONNECTED){
+    HTTPClient http;
+
+    //Start Connection
+    http.begin(serverName);
+    http.addHeader("Contect-Type", "application/json");
+  }
+
+
 
   
 }
