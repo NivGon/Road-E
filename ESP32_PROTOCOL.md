@@ -6,13 +6,15 @@ This document outlines the JSON protocol used for communication between the Road
 
 The ESP32 should send a JSON object containing any combination of the following fields. Partial updates are allowed.
 
-| Field       | Type   | Description                       | Example                            |
-| :---------- | :----- | :-------------------------------- | :--------------------------------- |
-| `lat`       | Number | GPS Latitude                      | `32.085300`                        |
-| `lng`       | Number | GPS Longitude                     | `34.781800`                        |
-| `temp`      | Number | Temperature in Celsius            | `25.4`                             |
-| `hum`       | Number | Humidity in %                     | `60.5`                             |
-| `streamUrl` | String | URL for the camera stream (MJPEG) | `"http://192.168.1.100:81/stream"` |
+| Field         | Type   | Description                       | Example                            |
+| :------------ | :----- | :-------------------------------- | :--------------------------------- |
+| `lat`         | Number | GPS Latitude                      | `32.085300`                        |
+| `lng`         | Number | GPS Longitude                     | `34.781800`                        |
+| `temp`        | Number | Temperature in Celsius            | `25.4`                             |
+| `hum`         | Number | Humidity in %                     | `60.5`                             |
+| `hazard_name` | String | Name of detected hazard           | `"Pothole"`                        |
+| `hazard_info` | String | Description/Severity              | `"Medium"`                         |
+| `streamUrl`   | String | URL for the camera stream (MJPEG) | `"http://192.168.1.100:81/stream"` |
 
 **Example JSON Payload:**
 
@@ -21,7 +23,9 @@ The ESP32 should send a JSON object containing any combination of the following 
   "lat": 32.0853,
   "lng": 34.7818,
   "temp": 25.4,
-  "hum": 60.5
+  "hum": 60.5,
+  "hazard_name": "Pothole",
+  "hazard_info": "Medium"
 }
 ```
 

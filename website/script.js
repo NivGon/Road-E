@@ -108,6 +108,61 @@ function updateStream(url) {
     }
 }
 
+// Database / Table Logic
+let dbRecordCount = 0;
+
+function updateSQLTable(data) {
+    const tbody = document.getElementById("db-body");
+    const noDataRow = tbody.querySelector(".no-data");
+
+    if (noDataRow) {
+        noDataRow.remove();
+    }
+
+    const row = document.createElement("tr");
+    
+    // ID
+    dbRecordCount++;
+    const idCell = document.createElement("td");
+    idCell.textContent = dbRecordCount;
+    row.appendChild(idCell);
+
+    // Time
+    const timeCell = document.createElement("td");
+    timeCell.textContent = new Date().toLocaleTimeString();
+    row.appendChild(timeCell);
+
+    // Hazard Name
+    const hazNameCell = document.createElement("td");
+    hazNameCell.textContent = data.hazard_name || "None";
+    row.appendChild(hazNameCell);
+
+    // Hazard Info
+    const hazInfoCell = document.createElement("td");
+    hazInfoCell.textContent = data.hazard_info || "--";
+    row.appendChild(hazInfoCell);
+
+    // GPS Location
+    const gpsCell = document.createElement("td");
+    if (data.lat !== undefined && data.lng !== undefined) {
+        gpsCell.textContent = `${data.lat.toFixed(6)}, ${data.lng.toFixed(6)}`;
+    } else {
+        gpsCell.textContent = "--";
+    }
+    row.appendChild(gpsCell);
+
+    // Prepend to show newest first, or append? Table headers usually imply list.
+    // Let's prepend to keep latest at top if it scrolls, or append if it's a log.
+    // Usually log is appended, but "newest first" is often better for monitoring.
+    // Let's use prepend (insertBefore first child).
+    tbody.insertBefore(row, tbody.firstChild);
+
+    // Limit to last 20 rows to prevent DOM flooding
+    if (tbody.children.length > 20) {
+        tbody.removeChild(tbody.lastChild);
+    }
+}
+
 // WebSocket Logic
 let currentConnectionUrl = null;
 let reconnectTimer = null;
@@ -192,6 +247,9 @@ function connectToGPSWebSocket(wsUrl) {
                 if (data.lat !== undefined && data.lng !== undefined) updateGPS(data.lat, data.lng);
                 if (data.temp !== undefined || data.hum !== undefined) updateSensors(data.temp, data.hum);
                 if (data.streamUrl !== undefined) updateStream(data.streamUrl);
+                
+                // Update SQL Table with any data received
+                updateSQLTable(data);
             } catch (err) {
                 console.warn('Invalid WS message, not JSON:', err, evt.data);
             }
