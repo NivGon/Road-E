@@ -27,7 +27,7 @@
 #define Motor1_Pin1 12
 #define Motor1_Pin2 13
 
-//Motor 2 Pins - Left Side
+//Motor 2 Pins - Right Side
 #define Motor2_Pin1 25
 #define Motor2_Pin2 4
 
