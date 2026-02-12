@@ -39,8 +39,12 @@
                     <div id="hum-val" class="value">--</div>
                 </div>
                 <div class="card">
-                    <h3>Status</h3>
-                    <div id="status-val" class="no-data">Offline</div>
+                    <h3>Connection</h3>
+                    <div id="status-val" class="no-data mb-15">Offline</div>
+                    <div class="connection-controls">
+                        <input type="text" id="esp-ip" placeholder="ws://192.168.x.x/ws" value="ws://localhost:8765">
+                        <button id="connect-btn" class="btn-small" onclick="connectToESP32()">Connect</button>
+                    </div>
                 </div>
             </div>
         </div>

@@ -1,7 +1,6 @@
 // Global variables
 let map;
 let marker;
-let ws;
 let reconnectInterval = 3000;
 
 // Initialize Leaflet Map
@@ -22,7 +21,7 @@ function initMap() {
     }).addTo(map);
 
     // Connect to WebSocket after map is ready
-    connectToGPSWebSocket();
+    // connectToGPSWebSocket(); // Removed
 }
 
 // UI Update Functions
@@ -108,102 +107,137 @@ function updateStream(url) {
     }
 }
 
-// WebSocket Logic
-function connectToGPSWebSocket(wsUrl) {
-    const computedUrl = (() => {
-        if (wsUrl) return wsUrl;
-        if (location.protocol === 'file:') return null;
-        const scheme = location.protocol === 'https:' ? 'wss:' : 'ws:';
-        const host = location.host || location.hostname;
-        return `${scheme}//${host}/ws`;
-    })();
+// Database / Table Logic
+let dbRecordCount = 0;
 
-    let triedLocalhostFallback = false;
-    let attemptUrl = wsUrl || computedUrl || 'ws://localhost:8765';
+function updateSQLTable(data) {
+    const tbody = document.getElementById("db-body");
+    const noDataRow = tbody.querySelector(".no-data");
 
-    if (location.protocol === 'file:' && !wsUrl) {
-        console.warn('Serving page from file:// — WebSocket same-origin detection is not possible. Trying ws://localhost:8765');
-        setStatusMessage('Connecting (file:// -> localhost)...', true);
-    } else {
-        setStatusMessage('Connecting...');
+    if (noDataRow) {
+        noDataRow.remove();
     }
-    showMapMessage('Connecting to Road-E...');
 
-    function tryConnect(url) {
-        try {
-            ws = new WebSocket(url);
-        } catch (err) {
-            console.error('WebSocket construction failed for', url, err);
-            handleConnectFailure(url, err);
-            return;
-        }
+    const row = document.createElement("tr");
+    
+    // ID
+    dbRecordCount++;
+    const idCell = document.createElement("td");
+    idCell.textContent = dbRecordCount;
+    row.appendChild(idCell);
 
-        ws.onopen = () => {
-            console.log('WebSocket connected to', url);
-            setStatusMessage('Connected');
-            hideMapMessage();
-        };
+    // Time
+    const timeCell = document.createElement("td");
+    timeCell.textContent = new Date().toLocaleTimeString();
+    row.appendChild(timeCell);
 
-        ws.onmessage = (evt) => {
-            try {
-                const data = JSON.parse(evt.data);
+    // Hazard Name
+    const hazNameCell = document.createElement("td");
+    hazNameCell.textContent = data.hazard_name || "None";
+    row.appendChild(hazNameCell);
+
+    // Hazard Info
+    const hazInfoCell = document.createElement("td");
+    hazInfoCell.textContent = data.hazard_info || "--";
+    row.appendChild(hazInfoCell);
+
+    // GPS Location
+    const gpsCell = document.createElement("td");
+    if (data.lat !== undefined && data.lng !== undefined) {
+        gpsCell.textContent = `${data.lat.toFixed(6)}, ${data.lng.toFixed(6)}`;
+    } else {
+        gpsCell.textContent = "--";
+    }
+    row.appendChild(gpsCell);
+
+    // Prepend to show newest first, or append? Table headers usually imply list.
+    // Let's prepend to keep latest at top if it scrolls, or append if it's a log.
+    // Usually log is appended, but "newest first" is often better for monitoring.
+    // Let's use prepend (insertBefore first child).
+    tbody.insertBefore(row, tbody.firstChild);
+
+    // Limit to last 20 rows to prevent DOM flooding
+    if (tbody.children.length > 20) {
+        tbody.removeChild(tbody.lastChild);
+    }
+}
+
+// HTTP Polling Logic
+let currentEspIp = null;
+let pollingInterval = null;
+const POLL_RATE_MS = 500;
+
+function connectToESP32() {
+    const ipInput = document.getElementById('esp-ip');
+    let url = ipInput ? ipInput.value.trim() : '';
+    
+    if (!url) {
+        alert("Please enter a valid IP address or URL (e.g., http://192.168.4.1)");
+        return;
+    }
+
+    // Ensure protocol is present
+    if (!url.startsWith('http://') && !url.startsWith('https://')) {
+        url = 'http://' + url;
+    }
+
+    // Determine if we are already polling this URL
+    if (currentEspIp === url && pollingInterval) {
+        return;
+    }
+
+    // Stop previous polling
+    if (pollingInterval) clearInterval(pollingInterval);
+
+    currentEspIp = url;
+    setStatusMessage('Connecting (Polling)...');
+    
+    // Update input
+    if (ipInput) ipInput.value = url;
+
+    // Start polling
+    startPolling();
+}
+
+function startPolling() {
+    if (pollingInterval) clearInterval(pollingInterval);
+
+    pollingInterval = setInterval(() => {
+        if (!currentEspIp) return;
+
+        fetch(`${currentEspIp}/status`)
+            .then(response => {
+                if (!response.ok) throw new Error("Network response was not ok");
+                return response.json();
+            })
+            .then(data => {
+                setStatusMessage('Online');
                 if (data.lat !== undefined && data.lng !== undefined) updateGPS(data.lat, data.lng);
                 if (data.temp !== undefined || data.hum !== undefined) updateSensors(data.temp, data.hum);
+                // Stream is handled differently in HTTP usually (MJPEG), but for now we might just get a URL or skip it
                 if (data.streamUrl !== undefined) updateStream(data.streamUrl);
-            } catch (err) {
-                console.warn('Invalid WS message, not JSON:', err, evt.data);
-            }
-        };
-
-        ws.onerror = (e) => {
-            console.error('WebSocket error on', url, e);
-            setStatusMessage('WebSocket error', true);
-            showMapMessage('WebSocket error — check server (see console).');
-        };
-
-        ws.onclose = (e) => {
-            console.log('WebSocket closed for', url, 'code:', e.code, 'reason:', e.reason);
-            setStatusMessage('Disconnected', true);
-            showMapMessage('Disconnected from Road-E — reconnecting...');
-            
-            if (!triedLocalhostFallback && url !== 'ws://localhost:8765') {
-                triedLocalhostFallback = true;
-                console.log('Trying localhost fallback ws://localhost:8765');
-                setTimeout(() => tryConnect('ws://localhost:8765'), 800);
-                return;
-            }
-            setTimeout(() => tryConnect(url), reconnectInterval);
-        };
-    }
-
-    function handleConnectFailure(url, err) {
-        console.warn('Connect failed for', url, err);
-        if (!triedLocalhostFallback && url !== 'ws://localhost:8765') {
-            triedLocalhostFallback = true;
-            console.log('Falling back to ws://localhost:8765');
-            tryConnect('ws://localhost:8765');
-            return;
-        }
-        setTimeout(() => {
-            tryConnect(url);
-        }, reconnectInterval);
-    }
-
-    tryConnect(attemptUrl);
+                
+                updateSQLTable(data);
+            })
+            .catch(err => {
+                console.error("Polling error:", err);
+                setStatusMessage('Offline', true);
+            });
+    }, POLL_RATE_MS);
 }
 
 // Control Logic
 async function sendDrive(cmd) {
     console.log("Sending command: " + cmd);
-    // If we have a WebSocket connection, we could send it here
-    if (ws && ws.readyState === WebSocket.OPEN) {
-        try {
-            ws.send(JSON.stringify({ type: 'drive', command: cmd }));
-        } catch (err) {
-            console.error("Error sending drive command", err);
-        }
-    } else {
-        // Fallback
+    if (!currentEspIp) {
+        console.warn("No ESP32 connected");
+        return;
+    }
+
+    try {
+        await fetch(`${currentEspIp}/drive?command=${cmd}`);
+    } catch (err) {
+        console.error("Error sending drive command", err);
     }
 }
 
@@ -222,6 +256,6 @@ document.addEventListener('DOMContentLoaded', () => {
 window.updateGPS = updateGPS;
 window.updateSensors = updateSensors;
 window.updateStream = updateStream;
-window.connectToGPSWebSocket = connectToGPSWebSocket;
+window.connectToESP32 = connectToESP32;
 window.sendDrive = sendDrive;
 window.initMap = initMap;
