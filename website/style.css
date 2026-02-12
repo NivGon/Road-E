@@ -174,3 +174,38 @@ nav ul li a:hover {
 .hidden {
   visibility: hidden;
 }
+
+/* Connection Controls */
+.connection-controls {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-top: 10px;
+}
+
+.connection-controls input {
+  background: #252525;
+  border: 1px solid #444;
+  color: white;
+  padding: 8px;
+  border-radius: 4px;
+}
+
+.btn-small {
+  background: #00d4ff;
+  color: #000;
+  border: none;
+  padding: 8px;
+  border-radius: 4px;
+  cursor: pointer;
+  font-weight: bold;
+  transition: 0.2s;
+}
+
+.btn-small:hover {
+  background: #00b8dd;
+}
+
+.btn-small:active {
+  transform: scale(0.98);
+}

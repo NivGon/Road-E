@@ -109,7 +109,21 @@ function updateStream(url) {
 }
 
 // WebSocket Logic
+let currentConnectionUrl = null;
+let reconnectTimer = null;
+
+function connectToESP32() {
+    const ipInput = document.getElementById('esp-ip');
+    const url = ipInput ? ipInput.value.trim() : '';
+    if (!url) {
+        alert("Please enter a valid WebSocket URL");
+        return;
+    }
+    connectToGPSWebSocket(url);
+}
+
 function connectToGPSWebSocket(wsUrl) {
+    // Determine URL
     const computedUrl = (() => {
         if (wsUrl) return wsUrl;
         if (location.protocol === 'file:') return null;
@@ -118,28 +132,56 @@ function connectToGPSWebSocket(wsUrl) {
         return `${scheme}//${host}/ws`;
     })();
 
-    let triedLocalhostFallback = false;
-    let attemptUrl = wsUrl || computedUrl || 'ws://localhost:8765';
-
-    if (location.protocol === 'file:' && !wsUrl) {
-        console.warn('Serving page from file:// — WebSocket same-origin detection is not possible. Trying ws://localhost:8765');
-        setStatusMessage('Connecting (file:// -> localhost)...', true);
-    } else {
-        setStatusMessage('Connecting...');
+    const targetUrl = wsUrl || computedUrl || 'ws://localhost:8765';
+    
+    // If we are already connected/connecting to this URL, do nothing
+    if (ws && (ws.readyState === WebSocket.OPEN || ws.readyState === WebSocket.CONNECTING) && currentConnectionUrl === targetUrl) {
+        console.log("Already connected to " + targetUrl);
+        return;
     }
-    showMapMessage('Connecting to Road-E...');
 
-    function tryConnect(url) {
+    // Cleanup previous connection
+    if (ws) {
+        // Prevent old callbacks from triggering reconnects
+        ws.onclose = null;
+        ws.onerror = null;
+        ws.close();
+    }
+    if (reconnectTimer) {
+        clearTimeout(reconnectTimer);
+        reconnectTimer = null;
+    }
+
+    currentConnectionUrl = targetUrl;
+    
+    // Update UI
+    setStatusMessage('Connecting...');
+    showMapMessage(`Connecting to ${targetUrl}...`);
+    
+    // Update input if empty (for default/initial call)
+    const ipInput = document.getElementById('esp-ip');
+    if (ipInput && !ipInput.value) {
+        ipInput.value = targetUrl;
+    }
+
+    function tryConnect() {
+        // If the user switched URL while waiting, abort this attempt
+        if (currentConnectionUrl !== targetUrl) return;
+
         try {
-            ws = new WebSocket(url);
+            ws = new WebSocket(targetUrl);
         } catch (err) {
-            console.error('WebSocket construction failed for', url, err);
-            handleConnectFailure(url, err);
+            console.error('WebSocket construction failed for', targetUrl, err);
+            handleConnectFailure();
             return;
         }
 
         ws.onopen = () => {
-            console.log('WebSocket connected to', url);
+            if (currentConnectionUrl !== targetUrl) {
+                ws.close();
+                return;
+            }
+            console.log('WebSocket connected to', targetUrl);
             setStatusMessage('Connected');
             hideMapMessage();
         };
@@ -156,40 +198,28 @@ function connectToGPSWebSocket(wsUrl) {
         };
 
         ws.onerror = (e) => {
-            console.error('WebSocket error on', url, e);
-            setStatusMessage('WebSocket error', true);
-            showMapMessage('WebSocket error — check server (see console).');
+            if (currentConnectionUrl !== targetUrl) return;
+            console.error('WebSocket error on', targetUrl, e);
+            setStatusMessage('Error', true);
         };
 
         ws.onclose = (e) => {
-            console.log('WebSocket closed for', url, 'code:', e.code, 'reason:', e.reason);
+            if (currentConnectionUrl !== targetUrl) return;
+            console.log('WebSocket closed for', targetUrl, 'code:', e.code, 'reason:', e.reason);
             setStatusMessage('Disconnected', true);
-            showMapMessage('Disconnected from Road-E — reconnecting...');
-            
-            if (!triedLocalhostFallback && url !== 'ws://localhost:8765') {
-                triedLocalhostFallback = true;
-                console.log('Trying localhost fallback ws://localhost:8765');
-                setTimeout(() => tryConnect('ws://localhost:8765'), 800);
-                return;
-            }
-            setTimeout(() => tryConnect(url), reconnectInterval);
+            showMapMessage('Disconnected — reconnecting...');
+            handleConnectFailure();
         };
     }
 
-    function handleConnectFailure(url, err) {
-        console.warn('Connect failed for', url, err);
-        if (!triedLocalhostFallback && url !== 'ws://localhost:8765') {
-            triedLocalhostFallback = true;
-            console.log('Falling back to ws://localhost:8765');
-            tryConnect('ws://localhost:8765');
-            return;
-        }
-        setTimeout(() => {
-            tryConnect(url);
+    function handleConnectFailure() {
+        if (currentConnectionUrl !== targetUrl) return;
+        reconnectTimer = setTimeout(() => {
+            tryConnect();
         }, reconnectInterval);
     }
 
-    tryConnect(attemptUrl);
+    tryConnect();
 }
 
 // Control Logic
@@ -223,5 +253,6 @@ window.updateGPS = updateGPS;
 window.updateSensors = updateSensors;
 window.updateStream = updateStream;
 window.connectToGPSWebSocket = connectToGPSWebSocket;
+window.connectToESP32 = connectToESP32;
 window.sendDrive = sendDrive;
 window.initMap = initMap;
