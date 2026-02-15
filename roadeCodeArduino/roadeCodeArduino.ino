@@ -2,10 +2,10 @@
   Road-E Project - Electronics
   
   author: Ariel Gal
-  date: 11-02-2026
+  date: 15-02-2026
 
-  Changes In Code At Date 11-02:
-  1. 
+  Changes In Code At Date 15-02:
+  1. add code to drive the car
 
 
 */
@@ -34,7 +34,7 @@
 //PWM Settings
 #define Frequancy 30000
 const int resolution = 8;    //Range between 0-255
-const int motorSpeed = 130;  //High speed to ensure movement
+const int motorSpeed = 100;  //High speed to ensure movement
 
 //defines for OLED screen
 #define Screen_Width 128  //OLED Display In WIdth (in pixels)
@@ -70,7 +70,6 @@ Servo myServo;
 const char* ssid = "Road-E";
 const char* password = "roade1234";
 WiFiServer server(80);
-
 
 //counters and checkers
 int angle = 180;  //check for angle of servo
@@ -132,16 +131,16 @@ void loop() {
   aht.getEvent(&humidity, &temp);
 
   //Check for light (from LDR) to turn on lights
-  // int light = analogRead(LDR);
-  // if (light <= 2000) {
-  //   digitalWrite(Red, HIGH);
-  //   digitalWrite(Green, HIGH);
-  //   digitalWrite(Blue, HIGH);
-  // } else {
-  //   digitalWrite(Red, LOW);
-  //   digitalWrite(Green, LOW);
-  //   digitalWrite(Blue, LOW);
-  // }
+  int light = analogRead(LDR);
+  if (light <= 2000) {
+    digitalWrite(Red, HIGH);
+    digitalWrite(Green, HIGH);
+    digitalWrite(Blue, HIGH);
+  } else {
+    digitalWrite(Red, LOW);
+    digitalWrite(Green, LOW);
+    digitalWrite(Blue, LOW);
+  }
 
   //Start rotating the servo
   myServo.write(angle);
@@ -157,18 +156,24 @@ void loop() {
       break;
   }
 
-  //Set direction of car forword
-  Serial.println("Moving Forward");
-  digitalWrite(Motor1_Pin1, LOW);
-  digitalWrite(Motor1_Pin2, HIGH);
-  digitalWrite(Motor2_Pin1, HIGH);
-  digitalWrite(Motor2_Pin2, LOW);
-  ledcWrite(Motor_Enable, motorSpeed);
-  delay(500);
-
-  
-
-
+  //Drive the car
+  int leftReading = digitalRead(IR2);   // Pin 36
+  int rightReading = digitalRead(IR4);  // Pin 35
+  char direct = direction(leftReading, rightReading);
+  switch (direct) {
+    case 's':
+      stopCar();
+      break;
+    case 'f':
+      moveForward();
+      break;
+    case 'r':
+      turnRight();
+      break;
+    case 'l':
+      turnLeft();
+      break;
+  }
 
   myServo.write(angle);
 }
@@ -187,4 +192,65 @@ int getDirection(int currentAngle, int currentDir) {  //function to check direct
   if (currentAngle >= 180) return -1;
   if (currentAngle <= 0) return 1;
   return currentDir;
+}
+
+char direction(int left, int right) {
+  if (left == 1 && right == 0) {
+    return 'l';
+  }
+  if (left == 1 && right == 1) {
+    return 'f';
+  }
+  if (left == 0 && right == 1) {
+    return 'r';
+  }
+  return 's';
+}
+
+void moveForward() {
+  // Set Speed
+  ledcWrite(Motor_Enable, motorSpeed);
+
+  // Motor 1 Forward
+  digitalWrite(Motor1_Pin1, LOW);
+  digitalWrite(Motor1_Pin2, HIGH);
+
+  // Motor 2 Forward
+  digitalWrite(Motor2_Pin1, LOW);
+  digitalWrite(Motor2_Pin2, HIGH);
+}
+
+void turnRight() {
+  // To turn Right: Keep Left motor moving, STOP Right motor
+  ledcWrite(Motor_Enable, motorSpeed);
+
+  // Left Motor Forward
+  digitalWrite(Motor1_Pin1, HIGH);
+  digitalWrite(Motor1_Pin2, LOW);
+
+  // Right Motor Stop (Pivot turn)
+  digitalWrite(Motor2_Pin1, LOW);
+  digitalWrite(Motor2_Pin2, HIGH);
+}
+
+void turnLeft() {
+  // To turn Left: Keep Right motor moving, STOP Left motor
+  ledcWrite(Motor_Enable, motorSpeed);
+
+  // Left Motor Stop (Pivot turn)
+  digitalWrite(Motor1_Pin1, LOW);
+  digitalWrite(Motor1_Pin2, HIGH);
+
+  // Right Motor Forward
+  digitalWrite(Motor2_Pin1, HIGH);
+  digitalWrite(Motor2_Pin2, LOW);
+}
+
+void stopCar() {
+  ledcWrite(Motor_Enable, 0);  // Speed 0
+
+  digitalWrite(Motor1_Pin1, LOW);
+  digitalWrite(Motor1_Pin2, LOW);
+  digitalWrite(Motor2_Pin1, LOW);
+  digitalWrite(Motor2_Pin2, LOW);
 }
