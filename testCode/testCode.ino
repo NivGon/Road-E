@@ -2,15 +2,13 @@
   Road-E Project - Electronics - Tester Code
 
   author: Ariel Gal
-  date: 15-02-2026
+  date: 19-02-2026
 
   Code File For Testing Sensors and Code Parts From The Main Code File
 
-  Changes In Code At Date 15-02:
-  1. correct bugs with the motors
-  2. to move forward - pins 2 of them need to be on HIGH
-  3. to turn right - pin 1 (motor 1) & pin 2 (motor 2) need to be HIGH
-  4. to turn left - the opposite from right
+  Changes In Code At Date 19-02:
+  1. Change Bug About Turning The Car: Need To Turn Off The Opposite Side Of The Motors From The Turning Direction
+  
 
 */
 
@@ -118,7 +116,7 @@ void turnRight() {
   ledcWrite(Motor_Enable, motorSpeed);
 
   // Left Motor Forward
-  digitalWrite(Motor1_Pin1, HIGH);
+  digitalWrite(Motor1_Pin1, LOW);
   digitalWrite(Motor1_Pin2, LOW);
 
   // Right Motor Stop (Pivot turn)
@@ -135,7 +133,7 @@ void turnLeft() {
   digitalWrite(Motor1_Pin2, HIGH);
 
   // Right Motor Forward
-  digitalWrite(Motor2_Pin1, HIGH);
+  digitalWrite(Motor2_Pin1, LOW);
   digitalWrite(Motor2_Pin2, LOW);
 }
 
