@@ -5,14 +5,19 @@
   The Code Contain The Next Sensors: AHT10, HSCR04, LDR.
 
   author: Ariel Gal
-  date: 11-02-2026
+  date: 16-02-2026
 
-  As Date 11-02:
-  1. add library ArduinoJson - to handle data format in "clean" way 
-  2. add settings for WIFI connection
-  3. add declare for server URL - IP of the computer
-  4. run once, don't working.
+  As Date 16-02:
+
   
+  How To Run This Code?
+  1. Upload this code to the esp32 (Attention to check that the info of the WIFI & IP are correct).
+  2. Run python code named "server.py" via cmd (Use cd to get into the folder, and than write "python server.py").
+  3. The Python code runs as server on the cmd, you don't need to run it via IDE.
+  4. Once the Python is running, open the SQL and enter "SELECT * FROM sensor_reading" and you can see the data in the table.
+  5. Repeat on the same as 4 every few minutes to see updates.
+
+
 */
 
 //libraries
@@ -37,11 +42,11 @@ Adafruit_AHTX0 aht;
 #define LDR 34
 
 //Network Settings
-const char* ssid = "Modin-Students";  //WIFI Name
-const char* password = "";            //WIFI Password
+const char* ssid = "WIFI_NAME";  //WIFI Name
+const char* password = "WIFI_PASSWORD";     //WIFI Password
 
 //Server URL
-const char* serverName = "http://192.168.22.179:5000/upload";  //need to update any time before running + need to keep :5000/data at the end.
+const char* serverName = "http://COMPUTER_IP:5000/upload";  //need to update any time before running + need to keep :5000/data at the end.
 
 
 void setup() {

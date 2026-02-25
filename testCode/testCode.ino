@@ -1,13 +1,14 @@
 /*
-  Road-E Project - Electronics
+  Road-E Project - Electronics - Tester Code
 
   author: Ariel Gal
-  date: 12-02-2026
+  date: 19-02-2026
 
   Code File For Testing Sensors and Code Parts From The Main Code File
 
-  Changes In Code At Date 12-02:
-  1. change and check about possible working of the motors
+  Changes In Code At Date 19-02:
+  1. Change Bug About Turning The Car: Need To Turn Off The Opposite Side Of The Motors From The Turning Direction
+  
 
 */
 
@@ -28,7 +29,7 @@
 // --- PWM Settings ---
 #define Frequency 30000
 const int resolution = 8;    // Range between 0-255
-const int motorSpeed = 160;  // Speed (0-255). 120 might be too slow for some motors, try 160.
+const int motorSpeed = 100;  // Speed (0-255). 120 might be too slow for some motors, try 160.
 
 // --- Logic Configuration ---
 // Change these if your car reacts in reverse (e.g., stops on black instead of driving)
@@ -42,10 +43,10 @@ void setup() {
   pinMode(IR2, INPUT);
 
   // Connect Motors Direction Pins
-//  pinMode(Motor1_Pin1, OUTPUT);
+  pinMode(Motor1_Pin1, OUTPUT);
   pinMode(Motor1_Pin2, OUTPUT);
   pinMode(Motor2_Pin1, OUTPUT);
- // pinMode(Motor2_Pin2, OUTPUT);
+  pinMode(Motor2_Pin2, OUTPUT);
 
   // Setup PWM for Speed Control
   // This uses ESP32 Core v3.0+ syntax
@@ -102,12 +103,12 @@ void moveForward() {
   ledcWrite(Motor_Enable, motorSpeed);
 
   // Motor 1 Forward
-  digitalWrite(Motor1_Pin1, HIGH);
-  digitalWrite(Motor1_Pin2, LOW);
+  digitalWrite(Motor1_Pin1, LOW);
+  digitalWrite(Motor1_Pin2, HIGH);
 
   // Motor 2 Forward
-  digitalWrite(Motor2_Pin1, HIGH);
-  digitalWrite(Motor2_Pin2, LOW);
+  digitalWrite(Motor2_Pin1, LOW);
+  digitalWrite(Motor2_Pin2, HIGH);
 }
 
 void turnRight() {
@@ -115,12 +116,12 @@ void turnRight() {
   ledcWrite(Motor_Enable, motorSpeed);
 
   // Left Motor Forward
-  digitalWrite(Motor1_Pin1, HIGH);
- digitalWrite(Motor1_Pin2, LOW);
+  digitalWrite(Motor1_Pin1, LOW);
+  digitalWrite(Motor1_Pin2, LOW);
 
   // Right Motor Stop (Pivot turn)
   digitalWrite(Motor2_Pin1, LOW);
- digitalWrite(Motor2_Pin2, LOW);
+  digitalWrite(Motor2_Pin2, HIGH);
 }
 
 void turnLeft() {
@@ -129,16 +130,16 @@ void turnLeft() {
 
   // Left Motor Stop (Pivot turn)
   digitalWrite(Motor1_Pin1, LOW);
- digitalWrite(Motor1_Pin2, LOW);
+  digitalWrite(Motor1_Pin2, HIGH);
 
   // Right Motor Forward
-  digitalWrite(Motor2_Pin1, HIGH);
+  digitalWrite(Motor2_Pin1, LOW);
   digitalWrite(Motor2_Pin2, LOW);
 }
 
 void stopCar() {
-  ledcWrite(Motor_Enable, 0); // Speed 0
-  
+  ledcWrite(Motor_Enable, 0);  // Speed 0
+
   digitalWrite(Motor1_Pin1, LOW);
   digitalWrite(Motor1_Pin2, LOW);
   digitalWrite(Motor2_Pin1, LOW);
