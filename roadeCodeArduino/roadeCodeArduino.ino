@@ -2,22 +2,23 @@
   Road-E Project - Electronics
   
   author: Ariel Gal
-  date: 15-02-2026
+  date: 25-02-2026
 
-  Changes In Code At Date 15-02:
-  1. add code to drive the car
+  Changes In Code At Date 25-02:
+  1. add code to drive the car via the website
 
 
 */
 
 //Libraries
+#include <WiFi.h>
 #include <Wire.h>
 #include <Adafruit_AHTX0.h>
 #include <ESP32Servo.h>
 #include <Adafruit_GFX.h>
 #include <Adafruit_SH110X.h>
 #include <Adafruit_NeoPixel.h>
-#include <WiFi.h>
+#include <ESPAsyncWebServer.h>
 
 //total defines
 #define i2c_Address 0x3c  //i2c for screen and AHT10
@@ -32,7 +33,7 @@
 #define Motor2_Pin2 4
 
 //PWM Settings
-#define Frequancy 30000
+#define Frequency 30000
 const int resolution = 8;    //Range between 0-255
 const int motorSpeed = 100;  //High speed to ensure movement
 
@@ -50,6 +51,10 @@ Adafruit_NeoPixel pixels = Adafruit_NeoPixel(NumPixels, Pin, NEO_GRB + NEO_KHZ80
 //hcsr04
 #define Echo_Pin 33
 #define Trig_Pin 32
+
+//IR
+#define IR2 36  //Left Side - Connect to Pin 36
+#define IR4 35  //Right Side - Connect to Pin 35
 
 //aht10
 Adafruit_AHTX0 aht;
@@ -69,11 +74,13 @@ Servo myServo;
 //WIFI
 const char* ssid = "Road-E";
 const char* password = "roade1234";
-WiFiServer server(80);
+AsyncWebServer server(80);
 
 //counters and checkers
 int angle = 180;  //check for angle of servo
-int direction = -1;
+int servoDirection = 1;
+const int black = 1;
+const int white = 0;
 
 void setup() {
   Serial.begin(9600);
@@ -81,6 +88,10 @@ void setup() {
   //hcsr
   pinMode(Echo_Pin, INPUT);
   pinMode(Trig_Pin, OUTPUT);
+
+  //IR
+  pinMode(IR4, INPUT);
+  pinMode(IR2, INPUT);
 
   //Servo
   myServo.attach(Servo_Pin);
@@ -106,8 +117,9 @@ void setup() {
   pinMode(Motor2_Pin2, OUTPUT);
 
   // Attach PWM
-  ledcAttach(Motor_Enable, Frequancy, resolution);
-  ledcAttach(Motor_Enable, Frequancy, resolution);
+  if (!ledcAttach(Motor_Enable, Frequency, resolution)) {
+    Serial.println("PWM Setup Failed!");
+  }
 
   //OLED
   display.begin(i2c_Address, true);
@@ -123,6 +135,18 @@ void setup() {
     Serial.println("Could Not Find AHT10 Sensor!");
     while (1) delay(10);
   }
+
+  //WiFi Connection
+  WiFi.begin(ssid, password);
+  while (WiFi.status() != WL_CONNECTED) {
+    delay(500);
+    Serial.print(".");
+  }
+  Serial.println("\nRoad-E Online!");
+  Serial.print("IP Address: ");
+  Serial.println(WiFi.localIP());
+
+  
 }
 
 void loop() {
@@ -144,10 +168,10 @@ void loop() {
 
   //Start rotating the servo
   myServo.write(angle);
-  direction = getDirection(angle, direction);
+  servoDirection = getDirection(angle, servoDirection);
 
   //Check to where rotate the servo
-  switch (direction) {
+  switch (servoDirection) {
     case 1:
       angle++;
       break;
@@ -159,8 +183,9 @@ void loop() {
   //Drive the car
   int leftReading = digitalRead(IR2);   // Pin 36
   int rightReading = digitalRead(IR4);  // Pin 35
-  char direct = direction(leftReading, rightReading);
-  switch (direct) {
+  char directCar = direction(leftReading, rightReading);
+
+  switch (directCar) {
     case 's':
       stopCar();
       break;
@@ -174,6 +199,8 @@ void loop() {
       turnLeft();
       break;
   }
+
+  delay(50);
 
   myServo.write(angle);
 }
@@ -225,7 +252,7 @@ void turnRight() {
   ledcWrite(Motor_Enable, motorSpeed);
 
   // Left Motor Forward
-  digitalWrite(Motor1_Pin1, HIGH);
+  digitalWrite(Motor1_Pin1, LOW);
   digitalWrite(Motor1_Pin2, LOW);
 
   // Right Motor Stop (Pivot turn)
@@ -242,7 +269,7 @@ void turnLeft() {
   digitalWrite(Motor1_Pin2, HIGH);
 
   // Right Motor Forward
-  digitalWrite(Motor2_Pin1, HIGH);
+  digitalWrite(Motor2_Pin1, LOW);
   digitalWrite(Motor2_Pin2, LOW);
 }
 
