@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin=""/>
     <link rel="stylesheet" href="style.css">
-    <script src="script.js" defer></script>
+    <script src="script.js?v=2" defer></script>
 
     <title>Road-E | Terminal</title>
 </head>
@@ -42,7 +42,7 @@
                     <h3>Connection</h3>
                     <div id="status-val" class="no-data mb-15">Offline</div>
                     <div class="connection-controls">
-                        <input type="text" id="esp-ip" placeholder="ws://192.168.x.x/ws" value="ws://localhost:8765">
+                        <input type="text" id="esp-ip" placeholder="http://192.168.x.x" value="http://10.36.52.234">
                         <button id="connect-btn" class="btn-small" onclick="connectToESP32()">Connect</button>
                     </div>
                 </div>
@@ -82,7 +82,7 @@
             <button class="hidden"></button>
 
             <button class="btn" onmousedown="sendDrive('L')" onmouseup="sendDrive('S')">◀</button>
-            <button class="btn btn-stop" onclick="sendDrive('S')">STOP</button>
+            <button class="btn btn-stop" onclick="sendDrive('S')">AUTO PILOT</button>
             <button class="btn" onmousedown="sendDrive('R')" onmouseup="sendDrive('S')">▶</button>
 
             <button class="hidden"></button>
