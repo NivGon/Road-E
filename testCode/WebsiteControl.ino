@@ -22,40 +22,6 @@ const int motorSpeed = 180;
 
 AsyncWebServer server(80);
 
-void stopCar() {
-  int leftReading = digitalRead(IR2);   // Pin 36
-  int rightReading = digitalRead(IR4);  // Pin 35
-
-  char direction(int left, int right) {
-  if (left == 1 && right == 0) {
-    return 'l';
-  }
-  if (left == 1 && right == 1) {
-    return 'f';
-  }
-  if (left == 0 && right == 1) {
-    return 'r';
-  }
-  return 's';
-  }
-
-  switch (direction) {
-    case 's':
-      stopCar();
-      break;
-    case 'f':
-      moveForward();
-      break;
-    case 'r':
-      turnRight();
-      break;
-    case 'l':
-      turnLeft();
-      break;
-  }
-
-}
-
 void moveForward() {
   ledcWrite(pwmChannel, motorSpeed);
   digitalWrite(Motor1_Pin1, LOW);  digitalWrite(Motor1_Pin2, HIGH);
