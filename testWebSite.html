@@ -1,0 +1,132 @@
+<!-- 
+ External Web Site That Contain Only Joysitck To Add SWITCH Button Between Auto and Manual Driving.
+ Need To Add The Button To The WebSite Based On This Code.
+  -->
+
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Remote Control Joystick</title>
+<style>
+  /* Match the dark background from the image */
+  body {
+    background-color: #121212;
+    color: white;
+    font-family: Arial, sans-serif;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    height: 100vh;
+    margin: 0;
+  }
+
+  /* Grid layout to perfectly align the joystick buttons */
+  .joystick-container {
+    display: grid;
+    grid-template-columns: repeat(3, 60px);
+    grid-template-rows: repeat(3, 60px);
+    gap: 10px;
+    margin-bottom: 30px; /* Space between joystick and the new button */
+  }
+
+  /* Base styling for all buttons */
+  .control-btn {
+    background-color: #2a2a2a;
+    border: 1px solid #3a3a3a;
+    border-radius: 8px;
+    color: white;
+    font-size: 18px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: background-color 0.2s, transform 0.1s;
+  }
+
+  .control-btn:active {
+    background-color: #444;
+    transform: scale(0.95);
+  }
+
+  /* Positioning the directional buttons on the grid */
+  .btn-up { grid-column: 2; grid-row: 1; }
+  .btn-left { grid-column: 1; grid-row: 2; }
+  .btn-stop { grid-column: 2; grid-row: 2; color: #ff4d4d; font-weight: bold; font-size: 14px; }
+  .btn-right { grid-column: 3; grid-row: 2; }
+  .btn-down { grid-column: 2; grid-row: 3; }
+
+  /* Styling for the new Mode Toggle Button */
+  .mode-toggle-btn {
+    background-color: #2a2a2a;
+    border: 1px solid #3a3a3a;
+    border-radius: 8px;
+    color: #4CAF50; /* Green text for Manual by default */
+    font-size: 16px;
+    font-weight: bold;
+    padding: 12px 30px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    width: 200px; /* Matches the width of the joystick container */
+    text-align: center;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+  }
+
+  .mode-toggle-btn:active {
+    transform: scale(0.98);
+  }
+
+  /* Added a specific class to style the 'Auto' state */
+  .mode-toggle-btn.auto-mode {
+    color: #2196F3; /* Blue text for Auto */
+    border-color: #2196F3;
+    background-color: rgba(33, 150, 243, 0.1); /* Slight blue tint */
+  }
+
+</style>
+</head>
+<body>
+
+  <div class="joystick-container">
+    <button class="control-btn btn-up">▲</button>
+    <button class="control-btn btn-left">◀</button>
+    <button class="control-btn btn-stop">STOP</button>
+    <button class="control-btn btn-right">▶</button>
+    <button class="control-btn btn-down">▼</button>
+  </div>
+
+  <button id="modeToggleBtn" class="mode-toggle-btn">Mode: Manual</button>
+
+  <script>
+    // Grab the button element
+    const modeBtn = document.getElementById('modeToggleBtn');
+    
+    // Track the current state (false = Manual, true = Auto)
+    let isAutoMode = false;
+
+    // Add click event listener to toggle modes
+    modeBtn.addEventListener('click', () => {
+      isAutoMode = !isAutoMode; // Flip the state
+      
+      if (isAutoMode) {
+        // Switch to Auto Mode
+        modeBtn.textContent = 'Mode: Auto';
+        modeBtn.classList.add('auto-mode');
+        // Add your logic here to tell your backend/robot to switch to AUTO
+        console.log("Switched to AUTO mode");
+      } else {
+        // Switch to Manual Mode
+        modeBtn.textContent = 'Mode: Manual';
+        modeBtn.classList.remove('auto-mode');
+        // Add your logic here to tell your backend/robot to switch to MANUAL
+        console.log("Switched to MANUAL mode");
+      }
+    });
+  </script>
+
+</body>
+</html>
