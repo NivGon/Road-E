@@ -1,0 +1,349 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Road-E | Terminal Control</title>
+    
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    
+    <style>
+        /* Base Styles */
+        body {
+            margin: 0;
+            font-family: "Segoe UI", Tahoma, sans-serif;
+            background-color: #0f0f0f;
+            color: #e0e0e0;
+        }
+
+        nav {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 15px 5%;
+            background-color: #1a1a1a;
+            border-bottom: 1px solid #333;
+            position: sticky;
+            top: 0;
+            z-index: 1000;
+        }
+
+        nav h1 { font-size: 22px; color: #00d4ff; margin: 0; }
+        nav ul { list-style: none; display: flex; gap: 25px; margin: 0; }
+        nav ul li a { text-decoration: none; color: #b0b0b0; font-size: 14px; transition: 0.3s; }
+        nav ul li a:hover { color: #fff; }
+
+        .container { padding: 40px 5%; min-height: 90vh; }
+        .dashboard-grid { display: grid; grid-template-columns: 2fr 1fr; gap: 20px; }
+
+        .card {
+            background: #1a1a1a;
+            padding: 20px;
+            border-radius: 8px;
+            border: 1px solid #333;
+        }
+
+        .mb-15 { margin-bottom: 15px; }
+
+        /* Map Styles */
+        .map-card { height: 400px; position: relative; }
+        #map { width: 100%; height: 100%; border-radius: 4px; }
+        .map-overlay {
+            position: absolute; inset: 0; display: flex;
+            align-items: center; justify-content: center;
+            pointer-events: none; z-index: 1000;
+        }
+
+        .value { font-size: 28px; font-weight: bold; margin-top: 5px; color: #00d4ff; }
+        .no-data { color: #555; font-style: italic; font-size: 14px; }
+
+        /* Database Table */
+        .db-table { width: 100%; border-collapse: collapse; background: #1a1a1a; margin-top: 20px; }
+        .db-table th, .db-table td { padding: 15px; text-align: left; border-bottom: 1px solid #333; }
+        .db-table th { background: #252525; color: #00d4ff; }
+
+        /* Control Section */
+        .text-center { text-align: center; }
+        .video-feed {
+            width: 100%; max-width: 640px; aspect-ratio: 4/3;
+            background: #000; border: 2px solid #333;
+            margin: 0 auto 20px; display: flex;
+            align-items: center; justify-content: center; overflow: hidden;
+        }
+        .stream-img { width: 100%; display: none; }
+
+        /* Joystick & Mode Toggle */
+        .control-wrapper {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 25px;
+        }
+
+        .joystick {
+            display: grid;
+            grid-template-columns: repeat(3, 80px);
+            gap: 10px;
+            justify-content: center;
+        }
+
+        .btn {
+            height: 80px;
+            background: #252525;
+            border: 1px solid #444;
+            color: white;
+            cursor: pointer;
+            border-radius: 10px;
+            font-size: 24px;
+            transition: 0.2s;
+            user-select: none;
+        }
+
+        .btn:active { background: #00d4ff; color: #000; transform: scale(0.95); }
+        .btn-stop { color: #ff4444; border-color: #552222; font-size: 16px; font-weight: bold; }
+        .btn-stop:active { background: #ff4444; color: #fff; }
+
+        .hidden { visibility: hidden; }
+
+        /* Mode Toggle Button */
+        .mode-toggle-btn {
+            background-color: #1a1a1a;
+            border: 2px solid #4CAF50;
+            border-radius: 5px;
+            color: #4CAF50;
+            font-size: 16px;
+            font-weight: bold;
+            padding: 15px 0;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            width: 260px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .mode-toggle-btn.auto-mode {
+            color: #00d4ff;
+            border-color: #00d4ff;
+            background-color: rgba(0, 212, 255, 0.1);
+            box-shadow: 0 0 15px rgba(0, 212, 255, 0.2);
+        }
+
+        /* Connection Controls */
+        .connection-controls { display: flex; flex-direction: column; gap: 10px; margin-top: 10px; }
+        .connection-controls input {
+            background: #252525; border: 1px solid #444;
+            color: white; padding: 8px; border-radius: 4px;
+        }
+        .btn-small {
+            background: #00d4ff; color: #000; border: none;
+            padding: 8px; border-radius: 4px; cursor: pointer;
+            font-weight: bold; transition: 0.2s;
+        }
+        .btn-small:hover { background: #00b8dd; }
+    </style>
+</head>
+<body>
+
+    <nav>
+        <h1>ROAD-E // SYSTEM</h1>
+        <ul>
+            <li><a href="#about">About</a></li>
+            <li><a href="#database">Database</a></li>
+            <li><a href="#control">Control</a></li>
+        </ul>
+    </nav>
+
+    <div id="about" class="container">
+        <h2>Live Monitoring</h2>
+        <div class="dashboard-grid">
+            <div id="map-area" class="card map-card">
+                <div id="map"></div>
+                <div id="map-overlay" class="map-overlay">
+                    <p id="map-message" class="no-data">Waiting for GPS signal...</p>
+                </div>
+            </div>
+            <div class="sensor-data">
+                <div class="card mb-15">
+                    <h3>Temperature</h3>
+                    <div id="temp-val" class="value">--</div>
+                </div>
+                <div class="card mb-15">
+                    <h3>Humidity</h3>
+                    <div id="hum-val" class="value">--</div>
+                </div>
+                <div class="card">
+                    <h3>Connection</h3>
+                    <div id="status-val" class="no-data mb-15">Offline</div>
+                    <div class="connection-controls">
+                        <input type="text" id="esp-ip" placeholder="http://192.168.x.x" value="http://10.36.52.234">
+                        <button id="connect-btn" class="btn-small" onclick="connectToESP32()">Connect</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="database" class="container">
+        <h2>SQL Records</h2>
+        <table class="db-table">
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>Time</th>
+                    <th>Hazard Name</th>
+                    <th>Hazard Info</th>
+                    <th>GPS Location</th>
+                </tr>
+            </thead>
+            <tbody id="db-body">
+                <tr>
+                    <td colspan="5" class="no-data table-placeholder">No data recorded in SQL database.</td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+
+    <div id="control" class="container text-center">
+        <h2>Remote Control</h2>
+        <div class="video-feed">
+            <img id="stream" src="" alt="Stream Offline" class="stream-img">
+            <p id="stream-placeholder" class="no-data">Camera feed not connected</p>
+        </div>
+
+        <div class="control-wrapper">
+            <div class="joystick">
+                <button class="hidden"></button>
+                <button class="btn" onmousedown="sendDrive('F')" onmouseup="sendDrive('S')">▲</button>
+                <button class="hidden"></button>
+
+                <button class="btn" onmousedown="sendDrive('L')" onmouseup="sendDrive('S')">◀</button>
+                <button class="btn btn-stop" onclick="sendDrive('S')">STOP</button>
+                <button class="btn" onmousedown="sendDrive('R')" onmouseup="sendDrive('S')">▶</button>
+
+                <button class="hidden"></button>
+                <button class="btn" onmousedown="sendDrive('B')" onmouseup="sendDrive('S')">▼</button>
+                <button class="hidden"></button>
+            </div>
+
+            <button id="modeToggleBtn" class="mode-toggle-btn">Mode: Manual</button>
+        </div>
+    </div>
+
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script>
+        let map, marker, currentEspIp = null, pollingInterval = null;
+        let isFetching = false;
+        let isAutoMode = false;
+        const POLL_RATE_MS = 2000;
+
+        // Initialize Map
+        function initMap() {
+            map = L.map('map').setView([32.0853, 34.7818], 13);
+            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                attribution: '© OpenStreetMap'
+            }).addTo(map);
+            marker = L.marker([0, 0], { opacity: 0 }).addTo(map);
+        }
+
+        // ESP32 Connection
+        function connectToESP32() {
+            const ipInput = document.getElementById('esp-ip');
+            let ipValue = ipInput ? ipInput.value.trim() : '';
+
+            if (!ipValue) {
+                alert("Please enter IP");
+                return;
+            }
+
+            let cleanIP = ipValue.replace(/^https?:\/\//, "").replace(/\/+$/, "");
+            currentEspIp = "http://" + cleanIP;
+
+            setStatusMessage('Connecting...');
+            
+            if (pollingInterval) clearInterval(pollingInterval);
+            fetchStatus();
+            pollingInterval = setInterval(() => { if (!isFetching) fetchStatus(); }, POLL_RATE_MS);
+        }
+
+        // Fetch Status (Sensors & GPS)
+        async function fetchStatus() {
+            if (!currentEspIp || isFetching) return;
+            isFetching = true;
+
+            try {
+                const res = await fetch(`${currentEspIp}/status`, { 
+                    mode: 'cors', 
+                    cache: 'no-store' 
+                });
+
+                if (!res.ok) throw new Error(`HTTP Error: ${res.status}`);
+
+                const data = await res.json();
+                
+                setStatusMessage(data.status || 'Online');
+                if (data.temp) document.getElementById("temp-val").textContent = data.temp + "°C";
+                if (data.hum) document.getElementById("hum-val").textContent = data.hum + "%";
+                
+                if (data.lat && data.lng) {
+                    const pos = [data.lat, data.lng];
+                    marker.setLatLng(pos).setOpacity(1);
+                    map.setView(pos, 15);
+                    document.getElementById('map-message').style.display = 'none';
+                }
+            } catch (err) {
+                console.error("Fetch error:", err);
+                setStatusMessage('Offline / Error', true);
+            } finally {
+                isFetching = false;
+            }
+        }
+
+        // Send Driving Commands
+        async function sendDrive(cmd) {
+            if (!currentEspIp) return;
+
+            // Block manual driving if in AUTO mode, unless it's STOP
+            if (isAutoMode && cmd !== 'S' && cmd !== 'AUTO_OFF') {
+                console.warn("Manual command blocked: System is in AUTO mode.");
+                return;
+            }
+
+            try {
+                await fetch(`${currentEspIp}/drive?command=${cmd}`, { mode: 'cors' });
+                console.log("Sent command:", cmd);
+            } catch (err) {
+                console.warn('Drive failed:', err);
+            }
+        }
+
+        // UI Helpers
+        function setStatusMessage(msg, isError = false) {
+            const el = document.getElementById("status-val");
+            if (el) {
+                el.textContent = msg;
+                el.style.color = isError ? "#ff4444" : "#00ff00";
+            }
+        }
+
+        // Mode Toggle Logic
+        document.addEventListener('DOMContentLoaded', () => {
+            initMap();
+            
+            const modeBtn = document.getElementById('modeToggleBtn');
+            modeBtn.addEventListener('click', async () => {
+                isAutoMode = !isAutoMode;
+                
+                if (isAutoMode) {
+                    modeBtn.textContent = 'Mode: Auto';
+                    modeBtn.classList.add('auto-mode');
+                    await sendDrive('AUTO_ON'); // Sends custom command to ESP
+                } else {
+                    modeBtn.textContent = 'Mode: Manual';
+                    modeBtn.classList.remove('auto-mode');
+                    await sendDrive('AUTO_OFF'); // Sends custom command to ESP
+                }
+            });
+        });
+    </script>
+</body>
+</html>
