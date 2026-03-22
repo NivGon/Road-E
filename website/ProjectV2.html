@@ -303,8 +303,7 @@
             if (!currentEspIp) return;
 
             // Block manual driving if in AUTO mode, unless it's STOP
-            if (isAutoMode && cmd !== 'S' && cmd !== 'AUTO_OFF') {
-                console.warn("Manual command blocked: System is in AUTO mode.");
+            if (isAutoMode && cmd !== 'S' && cmd !== 'AUTO_OFF' && cmd !== 'AUTO_ON') {
                 return;
             }
 
@@ -336,11 +335,11 @@
                 if (isAutoMode) {
                     modeBtn.textContent = 'Mode: Auto';
                     modeBtn.classList.add('auto-mode');
-                    await sendDrive('AUTO_ON'); // Sends custom command to ESP
+                    sendDrive('AUTO_ON'); // Sends custom command to ESP
                 } else {
                     modeBtn.textContent = 'Mode: Manual';
                     modeBtn.classList.remove('auto-mode');
-                    await sendDrive('AUTO_OFF'); // Sends custom command to ESP
+                    sendDrive('AUTO_OFF'); // Sends custom command to ESP
                 }
             });
         });
