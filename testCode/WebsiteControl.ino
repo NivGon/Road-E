@@ -2,8 +2,8 @@
 #include <ESPAsyncWebServer.h>
 
 // --- WIFI CONFIG ---
-const char *ssid = "Gal";
-const char *password = "Ydan20190616";
+const char *ssid = "";
+const char *password = "";
 
 // --- MOTOR PINS ---
 #define Motor1_Pin1 12
