@@ -10,14 +10,14 @@
 */
 
 //Libraries
-#include <WiFi.h>
-#include <Wire.h>
-#include <Adafruit_AHTX0.h>
-#include <ESP32Servo.h>
-#include <Adafruit_GFX.h>
-#include <Adafruit_SH110X.h>
-#include <Adafruit_NeoPixel.h>
-#include <ESPAsyncWebServer.h>
+#include <Wire.h>               //Aplly I2C
+#include <WiFi.h>               //WIFI
+#include <Adafruit_AHTX0.h>     //AHT10
+#include <ESP32Servo.h>         //Motor Servo
+#include <Adafruit_GFX.h>       //Graphic Screen
+#include <Adafruit_SH110X.h>    //Graphic Screen
+#include <Adafruit_NeoPixel.h>  //NeoLed
+#include <ESPAsyncWebServer.h>  //Host Web Site On ESP
 
 // --- Placeholder HTML for Web Server ---
 const char index_html[] PROGMEM = R"rawliteral(
@@ -35,8 +35,8 @@ const char index_html[] PROGMEM = R"rawliteral(
 // ---------------------------------------
 
 //WiFi Settings
-const char *ssid = "WIFI_NAME";
-const char *password = "WIFI_PASSWORD";
+const char *ssid = "ArielPhone";
+const char *password = "Ar060109";
 AsyncWebServer server(80);
 
 //total defines
@@ -87,11 +87,11 @@ Servo myServo;
 #define LDR 34
 
 //Counters and Checkers
-int angle = 180;  //check for angle of servo
-volatile bool isAutoMode = false;
-int servoStep = -2;
-float h = 0.0;
-float t = 0.0;
+int angle = 180;                   //check for angle of servo
+volatile bool isAutoMode = false;  //switcher between AUTO to MANUAL mode
+int servoStep = -2;                //steper for servo rotate
+float h = 0.0;                     //for humidity
+float t = 0.0;                     //for temperature
 
 // Function Declarations (Best practice to declare them before using them)
 void DisplayMessage(String row1, String row2);
@@ -163,8 +163,6 @@ void setup() {
   Serial.println("\nConnected to WiFi!");
   Serial.print("IP Address: ");
   Serial.println(WiFi.localIP());
-
-  // FIXED: IPAddress to String conversion
   DisplayMessage("IP Address: ", WiFi.localIP().toString());
 
   DefaultHeaders::Instance().addHeader("Access-Control-Allow-Origin", "*");
