@@ -1,23 +1,22 @@
 /*
   Road-E Project - Electronics
   author: Ariel Gal
-  date: 30-03-2026
+  date: 30-04-2026
 
-  Changes As Date 30-03:
-  1. code ready
-  2. need to add code for camera and GPS when get ones
+  Changes As Date 30-04:
+  1. THE CODE IS FINALLY DONE
   
 */
 
-//Libraries
-#include <Wire.h>               //Aplly I2C
-#include <WiFi.h>               //WIFI
-#include <Adafruit_AHTX0.h>     //AHT10
-#include <ESP32Servo.h>         //Motor Servo
-#include <Adafruit_GFX.h>       //Graphic Screen
-#include <Adafruit_SH110X.h>    //Graphic Screen
-#include <Adafruit_NeoPixel.h>  //NeoLed
-#include <ESPAsyncWebServer.h>  //Host Web Site On ESP
+// Libraries
+#include <Wire.h>               // Apply I2C
+#include <WiFi.h>               // WIFI
+#include <Adafruit_AHTX0.h>     // AHT10
+#include <ESP32Servo.h>         // Motor Servo
+#include <Adafruit_GFX.h>       // Graphic Screen
+#include <Adafruit_SH110X.h>    // Graphic Screen
+#include <Adafruit_NeoPixel.h>  // NeoLed
+#include <ESPAsyncWebServer.h>  // Host Web Site On ESP
 
 // --- Placeholder HTML for Web Server ---
 const char index_html[] PROGMEM = R"rawliteral(
@@ -28,72 +27,72 @@ const char index_html[] PROGMEM = R"rawliteral(
 </head>
 <body>
   <h1>Road-E Control Panel</h1>
-  <p>System is online. Replace this with your actual UI.</p>
+  <p>System is online.</p>
 </body>
 </html>
 )rawliteral";
 // ---------------------------------------
 
-//WiFi Settings
-const char *ssid = "ArielPhone";
-const char *password = "Ar060109";
+// WiFi Settings
+const char *ssid = "d";
+const char *password = "arch8912";
 AsyncWebServer server(80);
 
-//total defines
-#define i2c_Address 0x3c  //i2c for screen and AHT10
-#define Motor_Enable 5    //Motor Enable Pin
+// I2C Defines
+#define i2c_Address 0x3c  // i2c for screen and AHT10
 
-//Motor 1 Pins - Controls Left Side
+// --- MOTOR PINS ---
+#define Motor_Enable 5   
 #define Motor1_Pin1 12
 #define Motor1_Pin2 13
+#define Motor2_Pin1 25     
+#define Motor2_Pin2 4   
 
-//Motor 2 Pins - Controls Right Side
-#define Motor2_Pin1 25
-#define Motor2_Pin2 4
-
-//PWM Settings
+// PWM Settings
 #define Frequency 30000
-const int resolution = 8;   //Range between 0-255
-const int motorSpeed = 80;  //High speed to ensure movement
+const int resolution = 8;
+const int motorSpeed = 80;  
 const int pwmChannel = 0;
 
-//defines for OLED screen
-#define Screen_Width 128  //OLED Display In Width (in pixels)
-#define Screen_Height 64  //OLED Display In Height (in pixles)
+// OLED Screen Defines
+#define Screen_Width 128
+#define Screen_Height 64
 #define OLED_Reset -1
 Adafruit_SH1106G display = Adafruit_SH1106G(Screen_Width, Screen_Height, &Wire, OLED_Reset);
 
-//defines for NeoLED
-#define NeoLed_Pin 14
+// NeoLED Defines
+#define NeoLed_Pin 14     
 #define NumPixels 8
 Adafruit_NeoPixel pixels = Adafruit_NeoPixel(NumPixels, NeoLed_Pin, NEO_GRB + NEO_KHZ800);
 
-//hcsr04
+// HC-SR04
 #define Echo_Pin 33
 #define Trig_Pin 32
 
-//IR
+// IR Sensors
 #define IR_Left 36
 #define IR_Right 35
 
-//aht10
+// AHT10
 Adafruit_AHTX0 aht;
 
-//Servo
+// Servo
 Servo myServo;
 #define Servo_Pin 18
 
-//LDR
+// LDR
 #define LDR 34
 
-//Counters and Checkers
-int angle = 180;                   //check for angle of servo
-volatile bool isAutoMode = false;  //switcher between AUTO to MANUAL mode
-int servoStep = -2;                //steper for servo rotate
-float h = 0.0;                     //for humidity
-float t = 0.0;                     //for temperature
+// Counters, Checkers & Global States
+int angle = 180;                   // check for angle of servo
+volatile bool isAutoMode = false;  // switcher between AUTO to MANUAL mode
+int servoStep = -2;                // stepper for servo rotate
+float h = 0.0;                     // for humidity
+float t = 0.0;                     // for temperature
+const int black = 1;
+const int white = 0;
 
-// Function Declarations (Best practice to declare them before using them)
+// Function Declarations
 void DisplayMessage(String row1, String row2);
 int getAngle(int currAngle);
 char getIrDirection(int left, int right);
@@ -107,51 +106,53 @@ void moveBackward();
 void setup() {
   Serial.begin(9600);
 
-  //IR
+  // IR
   pinMode(IR_Left, INPUT);
   pinMode(IR_Right, INPUT);
 
-  //hcsr
+  // HC-SR04
   pinMode(Echo_Pin, INPUT);
   pinMode(Trig_Pin, OUTPUT);
-
-  //Servo
+/*
+  // Servo
   myServo.attach(Servo_Pin);
   myServo.write(0);
   delay(500);
   myServo.write(180);
   delay(500);
   myServo.write(90);
+*/
 
-  //OLED
+  // OLED
   display.begin(i2c_Address, true);
   display.clearDisplay();
   display.display();
-  display.setTextColor(SH110X_WHITE, SH110X_BLACK);  //(0,1)
+  display.setTextColor(SH110X_WHITE, SH110X_BLACK);
 
-  //LDR
+  // LDR
   pinMode(LDR, INPUT);
 
-  //aht10
+  // AHT10
   if (!aht.begin()) {
     Serial.println("Could Not Find AHT10 Sensor!");
     while (1) delay(10);
   }
 
-  //Neo Led
+  // Neo Led
   pixels.begin();
   pixels.clear();
-  pixels.show();  // Ensure they start off
+  pixels.show();
 
   // Connect Motors
   pinMode(Motor1_Pin1, OUTPUT);
   pinMode(Motor1_Pin2, OUTPUT);
   pinMode(Motor2_Pin1, OUTPUT);
   pinMode(Motor2_Pin2, OUTPUT);
-
+  
   // Set PWM
   ledcSetup(pwmChannel, Frequency, resolution);
   ledcAttachPin(Motor_Enable, pwmChannel);
+  stopCar(); // Ensure car is stopped on boot
 
   // WiFi Connection
   WiFi.begin(ssid, password);
@@ -168,7 +169,7 @@ void setup() {
   DefaultHeaders::Instance().addHeader("Access-Control-Allow-Origin", "*");
   DefaultHeaders::Instance().addHeader("Access-Control-Allow-Methods", "GET, POST, OPTIONS");
   DefaultHeaders::Instance().addHeader("Access-Control-Allow-Headers", "*");
-
+  
   server.onNotFound([](AsyncWebServerRequest *request) {
     if (request->method() == HTTP_OPTIONS) {
       request->send(200);
@@ -183,7 +184,6 @@ void setup() {
   });
 
   server.on("/status", HTTP_GET, [](AsyncWebServerRequest *request) {
-    // FIXED: Corrected JSON formatting and Float to String conversion
     String json = "{\"status\":\"Active\",\"temp\":" + String(t) + ",\"hum\":" + String(h) + ",\"lat\":32.0853,\"lng\":34.7818}";
     request->send(200, "application/json", json);
   });
@@ -192,13 +192,13 @@ void setup() {
   server.on("/mode", HTTP_GET, [](AsyncWebServerRequest *request) {
     if (request->hasParam("auto")) {
       String autoParam = request->getParam("auto")->value();
-      autoParam.toLowerCase();  // Make it case-insensitive
+      autoParam.toLowerCase();
 
-      // Accept "true" or "1" just in case the frontend formats it differently
       isAutoMode = (autoParam == "true" || autoParam == "1");
 
       stopCar();  // Always stop safely when switching modes
       Serial.println(isAutoMode ? "Switched to AUTO" : "Switched to MANUAL");
+     
       request->send(200, "text/plain", "Mode updated");
     } else {
       request->send(400, "text/plain", "Missing auto parameter");
@@ -207,13 +207,11 @@ void setup() {
 
   // Handle Manual Drive Commands
   server.on("/drive", HTTP_GET, [](AsyncWebServerRequest *request) {
-    // 1. Block manual commands if we are in auto mode
     if (isAutoMode) {
       request->send(403, "text/plain", "Ignored: Car is in Auto Mode");
       return;
     }
 
-    // 2. Execute manual commands
     if (request->hasParam("command")) {
       String cmd = request->getParam("command")->value();
       DisplayMessage("Direction: ", cmd);
@@ -229,11 +227,12 @@ void setup() {
       request->send(400, "text/plain", "Missing Command");
     }
   });
+
   server.begin();
 }
 
 void loop() {
-  //Get Temperature & Humidity
+  // Get Temperature & Humidity
   sensors_event_t humidity, temp;
   aht.getEvent(&humidity, &temp);
   t = temp.temperature;
@@ -241,7 +240,7 @@ void loop() {
 
   int light = analogRead(LDR);
 
-  // FIXED: Added else block to turn lights off
+  // Control LEDs based on light
   if (light >= 2000) {
     setColor(100, 100, 100);
   } else {
@@ -251,10 +250,10 @@ void loop() {
   int leftSide = digitalRead(IR_Left);
   int rightSide = digitalRead(IR_Right);
 
-  //Start rotating the servo
-  myServo.write(angle);
-  angle = getAngle(angle);
-  delay(150);
+  // Start rotating the servo
+  //myServo.write(angle);
+  //angle = getAngle(angle);
+  //delay(50); // Reduced delay for smoother multitasking
 
   if (isAutoMode) {
     char drive = getIrDirection(leftSide, rightSide);
@@ -268,7 +267,7 @@ void loop() {
   }
 }
 
-void DisplayMessage(String row1, String row2) {  //function to print messages on OLED screen
+void DisplayMessage(String row1, String row2) {
   display.clearDisplay();
   display.setTextSize(1);
   display.setCursor(5, 2);
@@ -278,20 +277,21 @@ void DisplayMessage(String row1, String row2) {  //function to print messages on
   display.display();
 }
 
-int getAngle(int currAngle) {  //function to get the servo angle
+int getAngle(int currAngle) {
   if (currAngle >= 180) servoStep = -2;
   if (currAngle <= 0) servoStep = 2;
   return currAngle + servoStep;
 }
 
-char getIrDirection(int left, int right) {  //function to set the direction of the car via the IR
-  if (left == 1 && right == 0) return 'L';
-  if (left == 1 && right == 1) return 'F';
-  if (left == 0 && right == 1) return 'R';
+char getIrDirection(int left, int right) {
+  if (left == black && right == white) return 'L';
+  if (left == black && right == black) return 'F';
+  if (left == white && right == black) return 'R';
   return 'S';
 }
 
-void setColor(int red, int green, int blue) {  //function to set and show the NeoLed
+
+void setColor(int red, int green, int blue) {
   pixels.clear();
   for (int i = 0; i < NumPixels; i++) {
     pixels.setPixelColor(i, pixels.Color(red, green, blue));
@@ -299,25 +299,15 @@ void setColor(int red, int green, int blue) {  //function to set and show the Ne
   pixels.show();
 }
 
-
-
 void moveForward() {
-  ledcWrite(pwmChannel, motorSpeed);
+  ledcWrite(Motor_Enable, motorSpeed);
   digitalWrite(Motor1_Pin1, LOW);
   digitalWrite(Motor1_Pin2, HIGH);
-  digitalWrite(Motor2_Pin1, LOW);
-  digitalWrite(Motor2_Pin2, HIGH);
-}
-
-void moveBackward() {
-  ledcWrite(pwmChannel, motorSpeed);
-  digitalWrite(Motor1_Pin1, HIGH);
-  digitalWrite(Motor1_Pin2, LOW);
   digitalWrite(Motor2_Pin1, HIGH);
   digitalWrite(Motor2_Pin2, LOW);
 }
 
-void turnLeft() {
+void moveBackward() {
   ledcWrite(pwmChannel, motorSpeed);
   digitalWrite(Motor1_Pin1, HIGH);
   digitalWrite(Motor1_Pin2, LOW);
@@ -326,15 +316,23 @@ void turnLeft() {
 }
 
 void turnRight() {
-  ledcWrite(pwmChannel, motorSpeed);
+  ledcWrite(Motor_Enable, motorSpeed);
   digitalWrite(Motor1_Pin1, LOW);
-  digitalWrite(Motor1_Pin2, HIGH);
+  digitalWrite(Motor1_Pin2, LOW);
   digitalWrite(Motor2_Pin1, HIGH);
   digitalWrite(Motor2_Pin2, LOW);
 }
 
+void turnLeft() {
+  ledcWrite(Motor_Enable, motorSpeed);
+  digitalWrite(Motor1_Pin1, LOW);
+  digitalWrite(Motor1_Pin2, HIGH);
+  digitalWrite(Motor2_Pin1, LOW);
+  digitalWrite(Motor2_Pin2, LOW);
+}
+
 void stopCar() {
-  ledcWrite(pwmChannel, 0);  // Speed 0
+  ledcWrite(Motor_Enable, 0);
   digitalWrite(Motor1_Pin1, LOW);
   digitalWrite(Motor1_Pin2, LOW);
   digitalWrite(Motor2_Pin1, LOW);
