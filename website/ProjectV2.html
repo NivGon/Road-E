@@ -330,16 +330,31 @@
             
             const modeBtn = document.getElementById('modeToggleBtn');
             modeBtn.addEventListener('click', async () => {
+                if (!currentEspIp) {
+                    alert("Please connect to the ESP32 first.");
+                    return;
+                }
+
                 isAutoMode = !isAutoMode;
                 
                 if (isAutoMode) {
                     modeBtn.textContent = 'Mode: Auto';
                     modeBtn.classList.add('auto-mode');
-                    sendDrive('AUTO_ON'); // Sends custom command to ESP
                 } else {
                     modeBtn.textContent = 'Mode: Manual';
                     modeBtn.classList.remove('auto-mode');
-                    sendDrive('AUTO_OFF'); // Sends custom command to ESP
+                }
+
+                // Send the correct API call to the ESP32
+                try {
+                    await fetch(`${currentEspIp}/mode?auto=${isAutoMode}`, { mode: 'cors' });
+                    console.log("Switched mode to:", isAutoMode ? "AUTO" : "MANUAL");
+                } catch (err) {
+                    console.warn('Mode switch failed:', err);
+                    // Revert UI if the network request fails
+                    isAutoMode = !isAutoMode; 
+                    modeBtn.textContent = isAutoMode ? 'Mode: Auto' : 'Mode: Manual';
+                    modeBtn.classList.toggle('auto-mode');
                 }
             });
         });
