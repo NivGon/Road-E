@@ -1,0 +1,431 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Road-E | Terminal Control</title>
+    
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    
+    <style>
+        /* Base Styles */
+        body {
+            margin: 0;
+            font-family: "Segoe UI", Tahoma, sans-serif;
+            background-color: #0f0f0f;
+            color: #e0e0e0;
+        }
+
+        nav {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 15px 5%;
+            background-color: #1a1a1a;
+            border-bottom: 1px solid #333;
+            position: sticky;
+            top: 0;
+            z-index: 1000;
+        }
+
+        nav h1 { font-size: 22px; color: #00d4ff; margin: 0; }
+        nav ul { list-style: none; display: flex; gap: 25px; margin: 0; }
+        nav ul li a { text-decoration: none; color: #b0b0b0; font-size: 14px; transition: 0.3s; }
+        nav ul li a:hover { color: #fff; }
+
+        .container { padding: 40px 5%; min-height: 90vh; }
+        .dashboard-grid { display: grid; grid-template-columns: 2fr 1fr; gap: 20px; }
+
+        .card {
+            background: #1a1a1a;
+            padding: 20px;
+            border-radius: 8px;
+            border: 1px solid #333;
+        }
+        
+        .card h3 { margin-top: 0; margin-bottom: 10px; font-size: 18px; }
+
+        .mb-15 { margin-bottom: 15px; }
+
+        /* Map Styles */
+        .map-card { height: 400px; position: relative; }
+        #map { width: 100%; height: 100%; border-radius: 4px; }
+        .map-overlay {
+            position: absolute; inset: 0; display: flex;
+            align-items: center; justify-content: center;
+            pointer-events: none; z-index: 1000;
+        }
+
+        .value { font-size: 28px; font-weight: bold; margin-top: 5px; color: #00d4ff; }
+        .no-data { color: #555; font-style: italic; font-size: 14px; }
+
+        /* Control & Camera Section */
+        .text-center { text-align: center; }
+        
+        /* New Camera Grid Layout */
+        .camera-grid {
+            display: grid;
+            grid-template-columns: 2fr 1fr;
+            gap: 20px;
+            align-items: start;
+            margin-top: 20px;
+        }
+
+        .video-feed {
+            width: 100%; 
+            aspect-ratio: 4/3;
+            background: #000; 
+            border: 2px solid #333;
+            display: flex;
+            align-items: center; justify-content: center; overflow: hidden;
+            border-radius: 8px;
+        }
+        .stream-img { width: 100%; height: 100%; object-fit: cover; display: none; }
+
+        /* Joystick & Mode Toggle */
+        .control-wrapper {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 25px;
+            margin-top: 20px;
+        }
+
+        .joystick {
+            display: grid;
+            grid-template-columns: repeat(3, 80px);
+            gap: 10px;
+            justify-content: center;
+        }
+
+        .btn {
+            height: 80px;
+            background: #252525;
+            border: 1px solid #444;
+            color: white;
+            cursor: pointer;
+            border-radius: 10px;
+            font-size: 24px;
+            transition: 0.2s;
+            user-select: none;
+            touch-action: manipulation;
+        }
+
+        .btn:active { background: #00d4ff; color: #000; transform: scale(0.95); }
+        .btn-stop { color: #ff4444; border-color: #552222; font-size: 16px; font-weight: bold; }
+        .btn-stop:active { background: #ff4444; color: #fff; }
+
+        .hidden { visibility: hidden; }
+
+        /* Mode Toggle Button */
+        .mode-toggle-btn {
+            background-color: #1a1a1a;
+            border: 2px solid #4CAF50;
+            border-radius: 5px;
+            color: #4CAF50;
+            font-size: 16px;
+            font-weight: bold;
+            padding: 15px 0;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            width: 260px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .mode-toggle-btn.auto-mode {
+            color: #00d4ff;
+            border-color: #00d4ff;
+            background-color: rgba(0, 212, 255, 0.1);
+            box-shadow: 0 0 15px rgba(0, 212, 255, 0.2);
+        }
+
+        /* Connection Controls Form UI */
+        .connection-form { display: flex; flex-direction: column; gap: 15px; }
+        
+        .connection-form input {
+            width: 100%;
+            box-sizing: border-box;
+            background: #252525; 
+            border: 1px solid #fff; /* Updated to match image */
+            color: white; 
+            padding: 10px; 
+            border-radius: 4px;
+            text-align: center;
+            font-size: 14px;
+        }
+        
+        .btn-cyan {
+            width: 100%;
+            background: #00d4ff; 
+            color: #000; 
+            border: none;
+            padding: 12px; 
+            border-radius: 4px; 
+            cursor: pointer;
+            font-weight: bold; 
+            transition: 0.2s;
+        }
+        
+        .btn-cyan:hover { background: #00b8dd; }
+
+        .status-active { color: #00ff00; font-style: italic; font-size: 14px;}
+        .status-error { color: #ff4444; font-style: italic; font-size: 14px;}
+
+    </style>
+</head>
+<body>
+
+    <nav>
+        <h1>ROAD-E // SYSTEM</h1>
+        <ul>
+            <li><a href="#about">About</a></li>
+            <li><a href="#camera-section">Camera</a></li>
+            <li><a href="#control">Control</a></li>
+        </ul>
+    </nav>
+
+    <div id="about" class="container">
+        <h2>Live Monitoring</h2>
+        <div class="dashboard-grid">
+            <div id="map-area" class="card map-card">
+                <div id="map"></div>
+                <div id="map-overlay" class="map-overlay">
+                    <p id="map-message" class="no-data">Waiting for GPS signal...</p>
+                </div>
+            </div>
+            <div class="sensor-data">
+                <div class="card mb-15">
+                    <h3>Temperature</h3>
+                    <div id="temp-val" class="value">--</div>
+                </div>
+                <div class="card mb-15">
+                    <h3>Humidity</h3>
+                    <div id="hum-val" class="value">--</div>
+                </div>
+                <div class="card">
+                    <h3>ESP32 Connection</h3>
+                    <div id="status-val" class="no-data mb-15">Offline</div>
+                    <div class="connection-form">
+                        <input type="text" id="esp-ip" placeholder="http://192.168.x.x" value="http://192.168.21.107">
+                        <button id="connect-btn" class="btn-cyan" onclick="connectToESP32()">Connect ESP32</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="camera-section" class="container">
+        <h2>Live Camera Feed</h2>
+        <div class="camera-grid">
+            <div class="video-feed">
+                <img id="stream" src="" alt="Stream Offline" class="stream-img">
+                <p id="stream-placeholder" class="no-data">Camera feed not connected</p>
+            </div>
+            
+            <div class="card connection-card">
+                <h3>Camera Connection</h3>
+                <div id="cam-status" class="no-data mb-15">Offline</div>
+                <div class="connection-form">
+                    <input type="text" id="cam-ip" placeholder="http://192.168.x.x/stream" value="http://192.168.21.108/stream">
+                    <button id="connect-cam-btn" class="btn-cyan" onclick="connectCamera()">Connect Camera</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="control" class="container text-center">
+        <h2>Remote Control</h2>
+        <div class="control-wrapper">
+            <div class="joystick">
+                <button class="hidden"></button>
+                <button class="btn" onmousedown="sendDrive('F')" onmouseup="sendDrive('S')" ontouchstart="sendDrive('F')" ontouchend="sendDrive('S')">▲</button>
+                <button class="hidden"></button>
+
+                <button class="btn" onmousedown="sendDrive('L')" onmouseup="sendDrive('S')" ontouchstart="sendDrive('L')" ontouchend="sendDrive('S')">◀</button>
+                <button class="btn btn-stop" onclick="sendDrive('S')">STOP</button>
+                <button class="btn" onmousedown="sendDrive('R')" onmouseup="sendDrive('S')" ontouchstart="sendDrive('R')" ontouchend="sendDrive('S')">▶</button>
+
+                <button class="hidden"></button>
+                <button class="btn" onmousedown="sendDrive('B')" onmouseup="sendDrive('S')" ontouchstart="sendDrive('B')" ontouchend="sendDrive('S')">▼</button>
+                <button class="hidden"></button>
+            </div>
+
+            <button id="modeToggleBtn" class="mode-toggle-btn">Mode: Manual</button>
+        </div>
+    </div>
+
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script>
+        let map, marker, currentEspIp = null, pollingInterval = null;
+        let isFetching = false;
+        let isAutoMode = false;
+        const POLL_RATE_MS = 2000;
+
+        // Initialize Map
+        function initMap() {
+            map = L.map('map').setView([32.0853, 34.7818], 13);
+            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                attribution: '© OpenStreetMap'
+            }).addTo(map);
+            marker = L.marker([0, 0], { opacity: 0 }).addTo(map);
+        }
+
+        // ESP32 Connection Logic
+        function connectToESP32() {
+            const ipInput = document.getElementById('esp-ip');
+            let ipValue = ipInput ? ipInput.value.trim() : '';
+
+            if (!ipValue) {
+                alert("Please enter ESP32 IP");
+                return;
+            }
+
+            let cleanIP = ipValue.replace(/^https?:\/\//, "").replace(/\/+$/, "");
+            currentEspIp = "http://" + cleanIP;
+
+            setStatusMessage('Connecting...');
+            
+            // Start Polling Sensor Data
+            if (pollingInterval) clearInterval(pollingInterval);
+            fetchStatus();
+            pollingInterval = setInterval(() => { if (!isFetching) fetchStatus(); }, POLL_RATE_MS);
+        }
+
+        // Camera Connection Logic (Updated with status text logic)
+        function connectCamera() {
+            const camInput = document.getElementById('cam-ip');
+            const camStatus = document.getElementById('cam-status');
+            let camValue = camInput ? camInput.value.trim() : '';
+
+            if (!camValue) {
+                alert("Please enter Camera IP or Stream URL");
+                return;
+            }
+
+            if (!camValue.startsWith("http://") && !camValue.startsWith("https://")) {
+                camValue = "http://" + camValue;
+            }
+
+            const streamImg = document.getElementById('stream');
+            const streamPlaceholder = document.getElementById('stream-placeholder');
+            
+            // Set UI to connecting state
+            camStatus.textContent = "Connecting...";
+            camStatus.className = "mb-15"; // reset color
+            
+            streamImg.src = camValue;
+            streamImg.style.display = 'block';
+            streamPlaceholder.style.display = 'none';
+
+            // If stream successfully loads a frame
+            streamImg.onload = () => {
+                camStatus.textContent = "Active";
+                camStatus.className = "status-active mb-15";
+            };
+
+            // If stream fails to connect or breaks
+            streamImg.onerror = () => {
+                streamImg.style.display = 'none';
+                streamPlaceholder.style.display = 'block';
+                streamPlaceholder.textContent = "Stream connection failed";
+                streamImg.src = ""; 
+                
+                camStatus.textContent = "Error / Offline";
+                camStatus.className = "status-error mb-15";
+            };
+        }
+
+        // Fetch Status (Sensors & GPS)
+        async function fetchStatus() {
+            if (!currentEspIp || isFetching) return;
+            isFetching = true;
+
+            try {
+                const res = await fetch(`${currentEspIp}/status`, { 
+                    mode: 'cors', 
+                    cache: 'no-store' 
+                });
+
+                if (!res.ok) throw new Error(`HTTP Error: ${res.status}`);
+
+                const data = await res.json();
+                
+                setStatusMessage(data.status || 'Active');
+                if (data.temp) document.getElementById("temp-val").textContent = data.temp + "°C";
+                if (data.hum) document.getElementById("hum-val").textContent = data.hum + "%";
+                
+                if (data.lat && data.lng) {
+                    const pos = [data.lat, data.lng];
+                    marker.setLatLng(pos).setOpacity(1);
+                    map.setView(pos, 15);
+                    document.getElementById('map-message').style.display = 'none';
+                }
+            } catch (err) {
+                console.error("Fetch error:", err);
+                setStatusMessage('Offline / Error', true);
+            } finally {
+                isFetching = false;
+            }
+        }
+
+        // Send Driving Commands
+        async function sendDrive(cmd) {
+            if (!currentEspIp) return;
+
+            if (isAutoMode && cmd !== 'S' && cmd !== 'AUTO_OFF' && cmd !== 'AUTO_ON') {
+                return;
+            }
+
+            try {
+                await fetch(`${currentEspIp}/drive?command=${cmd}`, { mode: 'cors' });
+                console.log("Sent command:", cmd);
+            } catch (err) {
+                console.warn('Drive failed:', err);
+            }
+        }
+
+        // UI Helpers
+        function setStatusMessage(msg, isError = false) {
+            const el = document.getElementById("status-val");
+            if (el) {
+                el.textContent = msg;
+                el.className = isError ? "status-error mb-15" : "status-active mb-15";
+            }
+        }
+
+        // Mode Toggle Logic
+        document.addEventListener('DOMContentLoaded', () => {
+            initMap();
+            
+            const modeBtn = document.getElementById('modeToggleBtn');
+            modeBtn.addEventListener('click', async () => {
+                if (!currentEspIp) {
+                    alert("Please connect to the ESP32 first.");
+                    return;
+                }
+
+                isAutoMode = !isAutoMode;
+                
+                if (isAutoMode) {
+                    modeBtn.textContent = 'Mode: Auto';
+                    modeBtn.classList.add('auto-mode');
+                } else {
+                    modeBtn.textContent = 'Mode: Manual';
+                    modeBtn.classList.remove('auto-mode');
+                }
+
+                try {
+                    await fetch(`${currentEspIp}/mode?auto=${isAutoMode}`, { mode: 'cors' });
+                    console.log("Switched mode to:", isAutoMode ? "AUTO" : "MANUAL");
+                } catch (err) {
+                    console.warn('Mode switch failed:', err);
+                    isAutoMode = !isAutoMode; 
+                    modeBtn.textContent = isAutoMode ? 'Mode: Auto' : 'Mode: Manual';
+                    modeBtn.classList.toggle('auto-mode');
+                }
+            });
+        });
+    </script>
+</body>
+</html>
